@@ -248,19 +248,26 @@ void step2(Graph g, std::set<Edge> blackEdges, float epsilon, vector<Graph> &con
 }
 
 //vymazeme vrcholy stupna 1 az ziaden taky nezostane
+//std::map<Number, std::set<Number>>
 void reducing1(Graph &g, Rotation &rot, Graph &removedGraph, map<Vertex, int> &visited){
+    if (visited[rot.v()]) return;
     visited[rot.v()] = true;
     if (rot.neighbours().size() > 1) {
-        for (auto &it: rot) {
+        std::vector<Number> to_visit;
+        for (auto &it: rot) {            
             if (!visited[it.v2()])
-                reducing1(g, it.r2(), removedGraph, visited);
+                to_visit.push_back(it.n2());
         }
+        for (auto n: to_visit)
+            reducing1(g, g[n], removedGraph, visited);
+
     }
     if (rot.neighbours().size() == 1) {
         addV(removedGraph, rot.v());
         addV(removedGraph, rot[0].v2());
         addE(removedGraph, Location(rot[0].n1(), rot[0].n2())); //pozor, pridavam incidenciu k zatial neexistujucej rotacii
         deleteV(g, rot.v());
+        //ak sused nie je visitnuty, tak sa zrekurznit
     }
 }
 
@@ -268,7 +275,8 @@ void reducing1(Graph &g, Rotation &rot, Graph &removedGraph, map<Vertex, int> &v
 
 //vsetky cesty vrcholov stupna 2 zmrstime do jednej hrany. t.j.
 //TODO:neviem ci ma medzi vrcholmi stupna 3 zostat vrchol, ci dokonca dva
-void reducing2(Graph &g, Graph &removedGraph, Rotation &rot, vector<Vertex> &toReduceV, vector<Edge> &toReduceE){
+//std::map<<edge, std::set<Number>>
+void reducing2(Graph &g, Graph &removedGraph, Rotation &rot, vector<Edge> &toReduceE){
     if (rot.neighbours().size()==2){
         if (find(toReduceV.begin(), toReduceV.end(), rot.v())==toReduceV.end())
             toReduceV.push_back(rot.v());
