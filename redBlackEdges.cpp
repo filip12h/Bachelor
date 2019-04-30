@@ -9,32 +9,33 @@ using namespace std;
 
 //tuto budem riesit lemmu 1
 
-void DFS(const Rotation &rot, map<Vertex, int> &visited, Graph &graph, Factory &f, Graph &g_) {
+void DFS(const Rotation &rot, map<Number, int> &visited, Graph &g, Factory &f, Graph &graph) {
     // oznac vrchol ako navstiveny a pridaj ho do komponentu
-    visited[rot.v()] = true;
-    addV(g_, rot.v(), rot.n(), f);
+    visited[rot.n()] = true;
+    addV(graph, rot.n(), f);
 
     //kazdy nenavstiveny susedny vrchol pridaj do komponentu aj s hranou ktorou sme ho objavili
     for (auto &inc: rot) {
         Rotation& neighbor = inc.r2();
-        if (!visited[neighbor.v()]) {
-            addV(g_, neighbor.v(), neighbor.n(), f);
-            visited[neighbor.v()] = true;
-            DFS(neighbor, visited, graph, f, g_);
+        if (!visited[neighbor.n()]) {
+            addV(graph, neighbor.n(), f);
+            visited[neighbor.n()] = true;
+            DFS(neighbor, visited, g, f, graph);
         }
     }
 }
 
 // metoda vrati komponenty grafu
-vector<Graph> connectedComponents(Graph &g, Factory &f) {
+vector<Graph> connectedComponents(Graph &g) {
     vector<Graph> components;
-    std::map<Vertex, int> visited;
-    for(auto &rot: g) visited[rot.v()]=0;
+    std::map<Number, int> visited;
+    for(auto &rot: g) visited[rot.n()]=0;
+    Factory f;
     Graph graph(createG(f));
 
     //najdeme nenavstiveny vrchol a nasledne najdeme hrany a vrcholy s nim spojene
     for (auto &rot: g) {
-        if (!visited[rot.v()]) {
+        if (!visited[rot.n()]) {
             DFS(rot, visited, g, f, graph);
             for(auto &rot1: graph)
                 for(auto it: g[rot1.n()].list(IP::primary()))
@@ -47,44 +48,28 @@ vector<Graph> connectedComponents(Graph &g, Factory &f) {
     return components;
 }
 
-/*
-* funkcia z grafu, v ktorom su cervene a cierne hrany take, ze kazdeho vrcholu sa dotyka aspon jedna cierna hrana
-* a zaroven nech je cervenych hran viac ako ciernych.
-* Najdeme mnozinu urcitej/obmedzenej velkosti taku, ze cervenych interncyh hran je viac ako ciernych externych
-*/
-vector<Vertex> redBlackEdges(Graph g, set<Edge> blackEdges, float epsilon) {
-    assert(blackEdges.size()<=g.size()/2); //podla lemy musi byt pocet cervenych hran vacsi ako pocet vrcholov grafu zmenseny o polovicu
-
-    Factory f;
-    Graph ciernyGraf(createG(f));
-    for(auto &e: blackEdges)
-        addE(ciernyGraf, e, f);
-
-    vector<Graph> rodinaKomponentov = connectedComponents(ciernyGraf, f);
-    //z rodinaKomponentov budeme neskor vyhadzovat jednotlive elementy, zostane tam velka tenka
-    //mnozina s nejakymi vlastnostami a nasledne najdeme mnozinu splnajucu lemu
-
-    float delta = epsilon/(1+2*epsilon);
-
+//probably unusefull
+vector<Graph> blackComponents(Graph g, set<Edge> blackEdges){
+    for (auto &rot:g){
+        for(auto &inc:rot){
+            if (blackEdges.find(inc.e())==blackEdges.end()){
+                deleteE(g, inc.e());
+            }
+        }
+    }
+    return connectedComponents(g);
 }
 
-//if(std::find(v.begin(), v.end(), x) != v.end()) {
-//    /* v contains x */
-//}
-//
-
-
-
 // set is positive if it has more internal red edges, negative if there are more external black edges, neutral if equal
-int isPositive(std::set<Vertex> vertices, Graph g, std::set<Edge> blackEdges){
+int isPositive(std::set<Number> vertices, Graph g, std::set<Edge> blackEdges){
     int intRedEdges = 0, extBlackEdges = 0;
     for (auto &rot: g){
-        if (vertices.find(rot.v())!=vertices.end()) //overujeme ci dany vrchol rot sa nachadza v nasej mnozine, kedze iba ta nas zaujima
+        if (vertices.find(rot.n())!=vertices.end()) //overujeme ci dany vrchol rot sa nachadza v nasej mnozine, kedze iba ta nas zaujima
             for (auto it: g[rot.n()].list(IP::primary())){
                 //pokial je sused mimo nasej mnoziny a je spojeny ciernou hranou, ta musi byt externa
-                if ((blackEdges.find(it->e())!=blackEdges.end())&&(vertices.find(it->v2()) == vertices.end()))
+                if ((blackEdges.find(it->e())!=blackEdges.end())&&(vertices.find(it->n2()) == vertices.end()))
                     extBlackEdges++;
-                else if ((blackEdges.find(it->e())==blackEdges.end())&&(vertices.find(it->v2()) != vertices.end()))
+                else if ((blackEdges.find(it->e())==blackEdges.end())&&(vertices.find(it->n2()) != vertices.end()))
                     intRedEdges++;
             }
     }
@@ -97,20 +82,20 @@ int isPositive(std::set<Vertex> vertices, Graph g, std::set<Edge> blackEdges){
 
 //trosku zbytocna funkcia, ale budis...
 //pri step1 vyzadujem mnozinu
-bool isLarge(std::set<Vertex> &vertices, Graph &g, std::set<Edge> blackEdges, float epsilon){
+bool isLarge(std::set<Number> &vertices, Graph &g, std::set<Edge> blackEdges, float epsilon){
     return vertices.size() > (1+2*epsilon)/epsilon;
 }
 
 //optional TODO: opakujuci sa kod vo funkciach alfa() a s()
 
 //pocet cervenych hran medzi mnozinou vertices a malymi mnozinami
-int alfa(std::set<Vertex> vertices, Graph &g, set<Edge> blackEdges, float epsilon, vector<Graph> connectedComponents){
+int alfa(std::set<Number> &vertices, Graph &g, set<Edge> blackEdges, float epsilon, vector<Graph> &connectedComponents){
     int result = 0;
     for (auto &rot: g){
-        if (vertices.find(rot.v())!=vertices.end()) //pokial dany vrchol rot je v nasej mnozine vertices
+        if (vertices.find(rot.n())!=vertices.end()) //pokial dany vrchol rot je v nasej mnozine vertices
             for (auto it: g[rot.n()].list(IP::primary())){ //prejdeme incidentne hrany vrchola
                 //pokial je hrana cervena a vrchol na druhej strane je mimo mnoziny
-                if ((blackEdges.find(it->e())==blackEdges.end())&&(vertices.find(it->v2()) != vertices.end()))
+                if ((blackEdges.find(it->e())==blackEdges.end())&&(vertices.find(it->n2()) != vertices.end()))
                     for (auto &comp: connectedComponents){ //prejdeme postupne komponenty
                         //najdeme komponent v ktorom je v2, komponent musi byt maly
                         if ((comp.contains(it->v2()))&&(!isLarge(vertices, g, blackEdges, epsilon)))
@@ -122,12 +107,12 @@ int alfa(std::set<Vertex> vertices, Graph &g, set<Edge> blackEdges, float epsilo
 }
 
 //velkost zjednotenia mnoziny vertices s malymi mnozinami spojenymi cervenou hranou
-int s(std::set<Vertex> vertices, Graph &g, set<Edge> blackEdges, float epsilon, vector<Graph> connectedComponents){
+int s(std::set<Number> &vertices, Graph &g, set<Edge> blackEdges, float epsilon, vector<Graph> connectedComponents){
     int result = vertices.size();
     for (auto &rot: g){
-        if (vertices.find(rot.v())!=vertices.end())
+        if (vertices.find(rot.n())!=vertices.end())
             for (auto it: g[rot.n()].list(IP::primary())){
-                if ((blackEdges.find(it->e())==blackEdges.end())&&(vertices.find(it->v2()) != vertices.end()))
+                if ((blackEdges.find(it->e())==blackEdges.end())&&(vertices.find(it->n2()) != vertices.end()))
                     for (auto &comp: connectedComponents){
                         if ((comp.contains(it->v2()))&&(!isLarge(vertices, g, blackEdges, epsilon))) {
                             result = +comp.size();
@@ -142,10 +127,9 @@ int s(std::set<Vertex> vertices, Graph &g, set<Edge> blackEdges, float epsilon, 
 
 }
 
-bool isThin(std::set<Vertex> vertices, Graph g, std::set<Edge> blackEdges, float epsilon, vector<Graph> connectedComponents){
-    float delta = epsilon/(1+2*epsilon);
+bool isThin(std::set<Number> vertices, Graph g, std::set<Edge> &blackEdges, float epsilon, vector<Graph> connectedComponents){
     return s(vertices, g, blackEdges, epsilon, connectedComponents)<=
-            (alfa(vertices, g, blackEdges, epsilon, connectedComponents)+1)/delta;
+           (alfa(vertices, g, blackEdges, epsilon, connectedComponents)+1)/(epsilon/(1+2*epsilon));
 
 }
 
@@ -155,10 +139,10 @@ bool isThin(std::set<Vertex> vertices, Graph g, std::set<Edge> blackEdges, float
 /*
  * pre spravne fungovanie musi byt mnozina vertices niektory jeden cely cierny komponent
  */
-int r(std::set<Vertex> vertices, Graph g, std::set<Edge> blackEdges, float epsilon, vector<Graph> connectedComponents){
+int r(std::set<Number> vertices, Graph g, std::set<Edge> blackEdges, float epsilon, vector<Graph> connectedComponents){
     int numOfBlackEdges = 0; //pocet ciernych hran medzi vrcholmi vo vertices
     for (auto &rot: g){
-        if (vertices.find(rot.v())!=vertices.end()){ //berieme vrcholy iba z mnoziny vertices
+        if (vertices.find(rot.n())!=vertices.end()){ //berieme vrcholy iba z mnoziny vertices
             for (auto it: g[rot.n()].list(IP::primary())){ //prejdeme incidentne hrany vrchola
                 if (blackEdges.find(it->e())!=blackEdges.end()){
                     numOfBlackEdges++;
@@ -175,11 +159,11 @@ int r(std::set<Vertex> vertices, Graph g, std::set<Edge> blackEdges, float epsil
 /*
 * vyhadzujeme male sety v ktorych sa nachadzaju cierne cykly
 */
-void step1(Graph g, std::set<Edge> blackEdges, float epsilon, vector<Graph> &connectedComponents){
+void step1(Graph &g, std::set<Edge> blackEdges, float epsilon, vector<Graph> &connectedComponents){
     for (auto &comp: connectedComponents){
-        vector<Vertex> compVertices = comp.list(RP::all(), RT::v());
+        vector<Number> compVertices = comp.list(RP::all(), RT::n());
         if (isLarge(compVertices, g, blackEdges, epsilon)){
-        //if (g.order()<=20/epsilon+41){
+            //if (g.order()<=20/epsilon+41){
             int b1 = 0, b3 = 0;
             for (auto &rot1: comp){
                 int pocetCiernychHran = 0;
@@ -201,7 +185,7 @@ void step1(Graph g, std::set<Edge> blackEdges, float epsilon, vector<Graph> &con
 //funkcia vyhodi komponent toErase a aj vsetky male komponenty s nim spojene cervenou hranou
 void eraseLargeThickComp(Graph &g, std::set<Edge> blackEdges, float epsilon, vector<Graph> &connectedComponents, Graph &toErase){
     for(auto &comp: connectedComponents){
-        vector<Vertex> compVertices = comp.list(RP::all(), RT::v());
+        vector<Number> compVertices = comp.list(RP::all(), RT::n());
         if (!isLarge(compVertices, g, blackEdges, epsilon)){ //v malych setoch prejdem vrcholy a zistim ci nemaju cervenu hranu s toErase. ak hej, tak komponent vyhodim
             for (auto &rot: comp){
                 for (auto it: g[rot.n()].list(IP::primary())){
@@ -218,7 +202,7 @@ void eraseLargeThickComp(Graph &g, std::set<Edge> blackEdges, float epsilon, vec
 /*
  * vyhadzujeme velke tenke sety aj s malymi setmi cervenou hranou s nimi spojenymi
  */
-void step2(Graph g, std::set<Edge> blackEdges, float epsilon, vector<Graph> &connectedComponents){
+void step2(Graph &g, std::set<Edge> blackEdges, float epsilon, vector<Graph> &connectedComponents){
     //z rodiny komponentov budeme vyhadzovat prvky pokym tam budu, pricom vyhadzoavnim sa mozu zmenit tenke mnoziny
     // na hrube a naopak, preto prehladavanie ukoncime az ked od posledneho najdenia neprejdeme vsetky prvky
 
@@ -229,7 +213,7 @@ void step2(Graph g, std::set<Edge> blackEdges, float epsilon, vector<Graph> &con
         for (auto &comp: connectedComponents){
             // pokial sme pocas celeho for cyklu nevyhodili nic, prejdeme do riadku kde brejkneme while cyklus.
             // pokial sme vyhodili, tak v tom momente sa vraciame na zaciatok a robime cely for cyklus od zaciatku
-            vector<Vertex> compVertices = comp.list(RP::all(), RT::v());
+            vector<Number> compVertices = comp.list(RP::all(), RT::n());
             if ((isLarge(compVertices, g, blackEdges, epsilon))&&(!isThin(compVertices, g, blackEdges, epsilon, connectedComponents))){
                 //vyhadzovanie komponentov bude prebiehat nasledovne
                 //spravim identicku kopiu IK grafu G
@@ -247,101 +231,188 @@ void step2(Graph g, std::set<Edge> blackEdges, float epsilon, vector<Graph> &con
 
 }
 
-//vymazeme vrcholy stupna 1 az ziaden taky nezostane
-//std::map<Number, std::set<Number>>
-void reducing1(Graph &g, Rotation &rot, Graph &removedGraph, map<Vertex, int> &visited){
-    if (visited[rot.v()]) return;
-    visited[rot.v()] = true;
-    if (rot.neighbours().size() > 1) {
-        std::vector<Number> to_visit;
-        for (auto &it: rot) {            
-            if (!visited[it.v2()])
-                to_visit.push_back(it.n2());
-        }
-        for (auto n: to_visit)
-            reducing1(g, g[n], removedGraph, visited);
-
+//fat is edge which refers to set vertices
+bool isFat(map<pair<Number, Number>, set<Number>> &extraEdges, pair<Number, Number> edge, Graph &g, set<Edge> &blackEdges, float epsilon, vector<Graph> connectedComponents){
+    set<Number> vertices;
+    if (extraEdges.find(edge)!=extraEdges.end()) {
+        vertices = extraEdges.at(edge);
     }
-    if (rot.neighbours().size() == 1) {
-        addV(removedGraph, rot.v());
-        addV(removedGraph, rot[0].v2());
-        addE(removedGraph, Location(rot[0].n1(), rot[0].n2())); //pozor, pridavam incidenciu k zatial neexistujucej rotacii
-        deleteV(g, rot.v());
-        //ak sused nie je visitnuty, tak sa zrekurznit
+    if (extraEdges.find(pair(edge.second, edge.first))!=extraEdges.end()){
+        vertices = extraEdges.at(pair(edge.second, edge.first));
     }
-}
-
-//T(e) si budeme pamatat v mape - z vrcholov do hran
-
-//vsetky cesty vrcholov stupna 2 zmrstime do jednej hrany. t.j.
-//TODO:neviem ci ma medzi vrcholmi stupna 3 zostat vrchol, ci dokonca dva
-//std::map<<edge, std::set<Number>>
-void reducing2(Graph &g, Graph &removedGraph, Rotation &rot, vector<Edge> &toReduceE){
-    if (rot.neighbours().size()==2){
-        if (find(toReduceV.begin(), toReduceV.end(), rot.v())==toReduceV.end())
-            toReduceV.push_back(rot.v());
-        if (find(toReduceE.begin(), toReduceE.end(), rot[0].e())==toReduceE.end()) {
-            toReduceE.push_back(rot[0].e());
-            toReduceV.push_back(rot[0].v2());
-        }
-        if (find(toReduceE.begin(), toReduceE.end(), rot[1].e())==toReduceE.end()) {
-            toReduceE.push_back(rot[1].e());
-            toReduceV.push_back(rot[1].v2());
-        }
-        reducing2(g, removedGraph, rot[0].r2(), toReduceV, toReduceE);
-        reducing2(g, removedGraph, rot[1].r2(), toReduceV, toReduceE);
-    }
-    if (rot.neighbours().size()==3){
-        toReduceV.erase(find(toReduceV.begin(), toReduceV.end(), rot.v()));
-    }
-}
-
-void reducedGraph(vector<Graph> &components, set<Edge> blackEdges, float epsilon){
-    map<Edge, Graph> edgeGraph;
-    Factory f;
-    Graph removedGraph(createG(f));
-    for (auto &comp: components){
-        for (auto &rot: comp){ //chcem pristupit k lubovolnemu vrcholu
-            std::map<Vertex, int> visited;
-            for(auto &rot: comp) visited[rot.v()]=0;
-            reducing1(comp, rot, removedGraph, visited);
-            break;
-        }
-        vector<Vertex> toReduceV;
-        vector<Edge> toReduceE;
-        reducing2(comp, removedGraph, comp[0], toReduceV, toReduceE);
-        //TODO: toReduceV a toReduceE pridat do removedGraph, odstranit z comp a namiesto toho do comp pridat
-        // hranu ktora bude mapou odkazovat na removedGraph
-    }
-}
-
-bool isFat(std::set<Vertex> vertices, Graph &g, set<Edge> blackEdges, float epsilon, vector<Graph> connectedComponents){
-    float delta = epsilon/(1+2*epsilon);
     return s(vertices, g, blackEdges, epsilon, connectedComponents)>
-            (4/(epsilon/(1+2*epsilon)))*alfa(vertices, g, blackEdges, epsilon, connectedComponents);
+           (4/(epsilon/(1+2*epsilon)))*alfa(vertices, g, blackEdges, epsilon, connectedComponents);
 }
 
-//sum of alfas of non-fat edges (components represented by edge in reduced graph) incident
-int n(){
+//sum of alfas of non-fat edges (components represented by edge in reduced graph) incident to vertex
+int n(Number vertex, map<pair<Number, Number>, set<Number>> &extraEdges, Graph &g, set<Edge> &blackEdges, float epsilon, vector<Graph> connectedComponents){
+    int totalAlfa = 0;
 
-    return 0;
+    for (auto &inc: g[vertex])
+        if (extraEdges.find(pair(inc.n1(), inc.n2()))!=extraEdges.end()) {
+            if (isFat(extraEdges, pair(inc.n1(), inc.n2()), g, blackEdges, epsilon, connectedComponents))
+                totalAlfa += alfa(extraEdges.at(pair(inc.n1(), inc.n2())), g, blackEdges, epsilon, connectedComponents);
+        } else {
+            if (extraEdges.find(pair(inc.n2(), inc.n1()))!=extraEdges.end())
+                if (isFat(extraEdges, pair(inc.n2(), inc.n1()), g, blackEdges, epsilon, connectedComponents))
+                    totalAlfa += alfa(extraEdges.at(pair(inc.n2(), inc.n1())), g, blackEdges, epsilon, connectedComponents);
+        }
+    return totalAlfa;
 }
 
+//create reference between deleted tree in step 1 a 2 of reducing and the edge which represents it
+map<pair<Number, Number>, set<Number>> edgeRef(Graph &graph, bool (&isRemoved)[], set<Edge> blackEdges){
+    map<pair<Number, Number>, set<Number>> er;
+    vector<Graph> components = connectedComponents(graph);
+    int edgeCounter = 0;
+    for (auto &comp: components){
+        for (auto &rot: comp){
+            if (!isRemoved[rot.n().to_int()]) {
+                Factory f;
+                deleteV(comp, rot.n(), f);
+            }
+        }
+        vector<Graph> reducedComponents = connectedComponents(comp);
+        for (auto &comp: reducedComponents){
+            vector<Number> vertices; //kazdy komponent bude predstavovany jednou hranou - z vrchola v1 do v2 (moze to byt aj ten isty vrchol)
+            set<Number> allVerticesInComponent; //komponent budu tvorit len vrcholy
+            for (auto &rot: comp) {
+                for (auto &inc: rot)
+                    if ((blackEdges.find(inc.e()) != blackEdges.end()) && (!isRemoved[inc.n2().to_int()]))
+                        vertices.push_back(inc.n2());
+                allVerticesInComponent.insert(rot.n());
+            }
+            er.insert(make_pair(make_pair(vertices[0], vertices[1]), allVerticesInComponent));
+            //chcel by som na "vymazane" grafy odkazovat cez hranu, nie dvojicu vrcholov
+        }
+    }
+    return er;
+}
+
+void removeLine(Graph &graph, bool (&isRemoved)[], const Number n){
+    if (!isRemoved[n.to_int()]){
+        int removedNeighbors = 0;
+        for (auto &inc: graph[n])
+            if (isRemoved[inc.n2().to_int()])
+                removedNeighbors++;
+        if (graph[n].neighbours().size() - removedNeighbors == 1) {
+            isRemoved[n.to_int()] = true;
+            for (auto &inc: graph[n])
+                removeLine(graph, isRemoved, inc.n2());
+        }
+    }
+}
+
+void reduceStep1(Graph &graph, bool (&isRemoved)[]){
+    for (auto &rot: graph){
+        removeLine(graph, isRemoved, rot.n());
+    }
+}
+
+void reduceStep2(Graph &graph, bool (&isRemoved)[]) {
+    bool toRemove[graph.order()];
+    for (auto &rot: graph) {
+        int removedNeighbors = 0;
+        for (auto &inc: graph[rot.n()])
+            if (isRemoved[inc.n2().to_int()])
+                removedNeighbors++;
+        if (graph[rot.n()].neighbours().size() - removedNeighbors < 3) // == 2
+            toRemove[rot.n().to_int()] = true;
+    }
+    //najprv som si vymazanie dvojkovych zaznacil, az potom naraz som ich vymazal, lebo inak by som vymazal prakticky vsetky vrhcoly
+    for (auto &a:toRemove){
+        if (toRemove[a]){
+            isRemoved[a] = true;
+        }
+    }
+}
+
+//function creates reducedGraph from graph - reduceStep1 and reduceStep2
+set<Number> reducedGraph(Graph &graph, set<Edge> &blackEdges, float epsilon, bool (&isRemoved)[]){
+    Factory f;
+    Graph blackComponents(createG(f));
+    for (int i = 0; i<graph.order(); i++)
+        addV(blackComponents, i, f);
+    for(auto &e: blackEdges)
+        addE(blackComponents, e, f);
+    vector<Graph> components = connectedComponents(blackComponents);
+    for (auto &comp: components){
+        reduceStep1(comp, isRemoved);
+        reduceStep2(comp, isRemoved);
+    }
+    map<pair<Number, Number>, set<Number>> extraEdges = edgeRef(blackComponents, isRemoved, blackEdges);
+
+    Graph rg(createG(f)); //create reduced graph rg
+    for (auto &rot: graph) // add all remaining (not removed) vertices in graph to rg
+        if (!isRemoved[rot.n().to_int()]) {
+            addV(rg, rot.n());
+            for (auto &inc: rot) //add black edges between added vertices to rg
+                if (blackEdges.find(inc.e())!=blackEdges.end())
+                    addE(rg, inc.e());
+        }
+    for (auto &edge: extraEdges) { //add edges between extra verices - these edges reference to removed subgraphs
+        addE(rg, rg.find(edge.first.first).operator*().v(), rg.find(edge.first.second).operator*().v());
+    }
+
+    for (auto &rot: rg){
+        if (n(rot.n(), extraEdges, graph, blackEdges, epsilon, components)==4){
+            set<Number> result;
+            result.insert(rot.n());
+            for (auto &inc: rot){
+                if (!isFat(extraEdges, pair(inc.n1(), inc.n2()), graph, blackEdges, epsilon, components))
+                    for (auto &n:extraEdges.at(pair(inc.n1(), inc.n2())))
+                        result.insert(n);
+                    //todo pridat este male sety spojene cervenou hranou - tato mnozina splna lemu
+            }
+
+            return result;
+        }
+        if (n(rot.n(), extraEdges, graph, blackEdges, epsilon, components)>4){
+            for (auto &inc: rot) {
+                set<Number> vertices;
+                if (extraEdges.find(pair(inc.n1(), inc.n2())) != extraEdges.end()) {
+                    vertices = extraEdges.at(pair(inc.n1(), inc.n2()));
+                }
+                if (extraEdges.find(pair(inc.n2(), inc.n1())) != extraEdges.end()) {
+                    vertices = extraEdges.at(pair(inc.n2(), inc.n1()));
+                }
+                if ((!isFat(extraEdges, pair(inc.n1(), inc.n2()), graph, blackEdges, epsilon, components))
+                    && (alfa(vertices, graph, blackEdges, epsilon, components)){
+                    //todo podobne dokoncit ako pripad n(v)=4
+                }
+            }
+            set<Number> result;
+            result.insert(rot.n());
+
+        }
+    }
+}
+
+/*
+* funkcia z grafu, v ktorom su cervene a cierne hrany take, ze kazdeho vrcholu sa dotyka aspon jedna cierna hrana
+* a zaroven nech je cervenych hran viac ako ciernych.
+* Najdeme mnozinu urcitej/obmedzenej velkosti taku, ze cervenych interncyh hran je viac ako ciernych externych
+*/
+vector<Vertex> redBlackEdges(Graph g, set<Edge> &blackEdges, float epsilon) {
+    assert(blackEdges.size()<=g.size()/2); //podla lemy musi byt pocet cervenych hran vacsi ako pocet vrcholov grafu zmenseny o polovicu
+
+    Factory f;
+    Graph ciernyGraf(createG(f));
+    for(auto &e: blackEdges)
+        addE(ciernyGraf, e, f);
+
+    vector<Graph> rodinaCiernychKomponentov = connectedComponents(ciernyGraf);
+    //z rodinaCiernychKomponentov budeme neskor vyhadzovat jednotlive elementy, zostane tam velka tenka
+    //mnozina s nejakymi vlastnostami a nasledne najdeme mnozinu splnajucu lemu
+
+    //TODO: some simple cases such that small positive set or 2 small sets connected via a red edge
+
+    step1(g, blackEdges, epsilon, rodinaCiernychKomponentov);
+
+    step2(g, blackEdges, epsilon, rodinaCiernychKomponentov);
 
 
 
+    //float delta = epsilon/(1+2*epsilon);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}
