@@ -1,11 +1,50 @@
 #include <vector>
-#include <basic_impl.hpp>
+#include "basic_impl.hpp"
 #include <assert.h>
 #include <algorithm>
+#include "redBlackEdges.h"
+#include <iostream>
 
 
 using namespace ba_graph;
 using namespace std;
+
+
+struct node
+{
+    Number vertex;
+    struct node *left;
+    struct node *right;
+    struct node *parent;
+    bool isDesignated;
+};
+
+//unique_ptr
+
+struct node* createNode(Number vertex){
+    struct node* newNode = (struct node*)malloc(sizeof(struct node));
+    newNode->vertex = vertex;
+    newNode->left = NULL;
+    newNode->right = NULL;
+    newNode->parent = NULL;
+    newNode->isDesignated = false;
+
+    return newNode;
+}
+
+//funkcia na vratenie pamate free()
+
+struct node* insertLeft(struct node *root, Number vertex) {
+    root->left = createNode(vertex);
+    root->left->parent = root;
+    return root->left;
+}
+
+struct node* insertRight(struct node *root, Number vertex){
+    root->right = createNode(vertex);
+    root->right->parent = root;
+    return root->right;
+}
 
 //tuto budem riesit lemmu 1
 
@@ -120,7 +159,7 @@ set<set<Number>> blackComponents(Graph g, set<Edge> blackEdges){
 }
 
 // set is positive if it has more internal red edges, negative if there are more external black edges, neutral if equal
-int isPositive(set<Number> vertices, Graph g, set<Edge> blackEdges){
+int isPositive(set<Number> vertices, Graph &g, set<Edge> blackEdges){
     int intRedEdges = 0, extBlackEdges = 0;
     for (auto &rot: g){
         if (vertices.find(rot.n())!=vertices.end()) //overujeme ci dany vrchol rot sa nachadza v nasej mnozine, kedze iba ta nas zaujima
@@ -145,7 +184,7 @@ bool isLarge(set<Number> vertices, Graph &g, set<Edge> blackEdges, float epsilon
     return (vertices.size() > (1+2*epsilon)/epsilon);
 }
 
-//optional TODO: opakujuci sa kod vo funkciach alfa() a s() a alfaVertices()
+//optional TODO: opakujuci sa kod vo funkciach alfa() a s() a smallSetsViaRedEdge()
 
 //pocet cervenych hran medzi mnozinou vertices a malymi mnozinami
 int alfa(set<Number> &vertices, Graph &g, set<Edge> blackEdges, float epsilon, set<set<Number>> &connectedComponents){
@@ -160,8 +199,9 @@ int alfa(set<Number> &vertices, Graph &g, set<Edge> blackEdges, float epsilon, s
 }
 
 //zjednotenie mnoziny vertices s malymi setmi spojenych cervenou hranou
-set<Number> alfaVertices(set<Number> &vertices, Graph &g, set<Edge> blackEdges, float epsilon, set<set<Number>> &connectedComponents) {
-
+//addOnlyOneSet is on when simple cases such that 2 small sets connected via red edge
+set<Number> smallSetsViaRedEdge(set<Number> vertices, Graph &g, set<Edge> blackEdges, float epsilon,
+                                set<set<Number>> &connectedComponents, bool addOnlyOneSet) {
     set<Number> addedVertices;
     for (auto &n: vertices) addedVertices.insert(n);
 
@@ -180,6 +220,8 @@ set<Number> alfaVertices(set<Number> &vertices, Graph &g, set<Edge> blackEdges, 
                 }
                 if (compFound) break;
             }
+        if (compFound && addOnlyOneSet)
+            break;
     }
     return addedVertices;
 }
@@ -251,25 +293,39 @@ void step1(Graph &g, set<Edge> blackEdges, float epsilon, set<set<Number>> &conn
                     b3++;
             }
             if (b1<=b3)
-                connectedComponents.erase(remove(connectedComponents.begin(), connectedComponents.end(), comp));
+                connectedComponents.erase(connectedComponents.find(comp));
+                //connectedComponents.erase(remove(connectedComponents.begin(), connectedComponents.end(), comp));
         }
     }
 }
 
 //funkcia vyhodi komponent toErase a aj vsetky male komponenty s nim spojene cervenou hranou
 void eraseLargeThickComp(Graph &g, set<Edge> blackEdges, float epsilon, set<set<Number>> &connectedComponents, set<Number> toErase){
-    for(auto &comp: connectedComponents){
-        if (!isLarge(comp, g, blackEdges, epsilon)){ //v malych setoch prejdem vrcholy a zistim ci nemaju cervenu hranu s toErase. ak hej, tak komponent vyhodim
-            for (auto &n: comp){
-                for (auto it: g[n].list(IP::primary())){
-                    if ((blackEdges.find(it->e())==blackEdges.end())&&(toErase.find(it->n2())!=toErase.end())){
-                        connectedComponents.erase(remove(connectedComponents.begin(), connectedComponents.end(), comp));
+    set<set<Number>> erasedComponents;
+
+    for (auto &comp: connectedComponents) {
+        if (!isLarge(comp, g, blackEdges, epsilon)) { //v malych setoch prejdem vrcholy a zistim ci nemaju cervenu hranu s toErase. ak hej, tak komponent vyhodim
+            for (auto &n: comp) {
+                for (auto it: g[n].list(IP::primary())) {
+                    if ((blackEdges.find(it->e()) == blackEdges.end()) &&
+                        (toErase.find(it->n2()) != toErase.end())) {
+                        erasedComponents.insert(comp);
                     }
                 }
             }
         }
     }
-    connectedComponents.erase(remove(connectedComponents.begin(), connectedComponents.end(), toErase));
+    erasedComponents.insert(toErase);
+    auto isErased = [&](std::set<Number> conC){return erasedComponents.count(conC)>0;};
+
+    for(auto it=connectedComponents.begin(); it!=connectedComponents.end(); it++)
+        if (isErased(*it))
+            it = connectedComponents.erase(it);
+
+//    std::remove_if(connectedComponents.begin(), connectedComponents.end(), isErased);
+//    for (auto &comp: erasedComponents)
+//        connectedComponents.erase(remove(connectedComponents.begin(), connectedComponents.end(), comp));
+//    connectedComponents.erase(find(connectedComponents.begin(), connectedComponents.end(), toErase));
 }
 
 /*
@@ -403,6 +459,64 @@ void reduceStep2(Graph &g, set<Number> graphToReduce,  bool (&isRemoved)[]) {
     }
 }
 
+//
+node* createSubtree(Graph &graph, node* &root, set<Number> &vertices, set<Edge> edges){
+    for (auto &inc: graph[root->vertex])
+        //aby sme sa z vrchola pozerali do podstromu a po spravnej hrane
+        if ((vertices.find(inc.n2())!=vertices.end())&&(edges.find(inc.e())!=edges.end())) {
+            if (root->parent->vertex != inc.n2()) { //pokial sa pozeram na vrchol ktory je mojim otcom tak nic nerob
+                node* newNode = createNode(inc.n2());
+                if (root->left == NULL)
+                    insertLeft(root, newNode->vertex);
+                else insertRight(root, newNode->vertex);
+                createSubtree(graph, newNode, vertices, edges);
+            }
+        }
+    return root;
+}
+
+set<Number> getSubtreeVertices(Graph &graph, node* root, set<Number> &subtreeVertices){
+    subtreeVertices.insert(root->vertex);
+    if (root->left!=NULL) getSubtreeVertices(graph, root->left, subtreeVertices);
+    if (root->right!=NULL) getSubtreeVertices(graph, root->right, subtreeVertices);
+    return subtreeVertices;
+}
+
+bool isNodeInSubtree(Graph &graph, node* root, Number wanted){
+    if (wanted.to_int()==root->vertex.to_int()) return true;
+    if (root->vertex==NULL) return false;
+    return (isNodeInSubtree(graph, root->left, wanted)||(isNodeInSubtree(graph, root->right, wanted)));
+}
+
+void undesignateNodesAbove(node* root){
+    while (root->parent!=NULL){
+        root->parent->isDesignated=false;
+        undesignateNodesAbove(root->parent);
+    }
+}
+
+void designateNodes(Graph &graph, node* root, set<Edge> blackEdges, float epsilon, set<set<Number>> components, Number marked1, Number marked2){
+    if ((!isNodeInSubtree(graph, root, marked1))&&(!isNodeInSubtree(graph, root, marked2))) {
+        set<Number> subtreeVertices = getSubtreeVertices(graph, root, subtreeVertices);
+        if (alfa(subtreeVertices, graph, blackEdges, epsilon, components) == 2) {
+            root->isDesignated = true;
+            undesignateNodesAbove(root);
+        }
+    }
+    if (root->left!=NULL)
+        designateNodes(graph, root->left, blackEdges, epsilon, components, marked1, marked2);
+    if (root->right!=NULL)
+        designateNodes(graph, root->right, blackEdges, epsilon, components, marked1, marked2);
+
+}
+
+set<node*> getDesignatedNodes(node* root, set<node*> &nodes){
+    if (root->isDesignated) nodes.insert(root);
+    if (root->left!=NULL) getDesignatedNodes(root->left, nodes);
+    if (root->right!=NULL) getDesignatedNodes(root->right, nodes);
+    return nodes;
+}
+
 //function creates reducedGraph from graph - reduceStep1 and reduceStep2
 set<Number> reducedGraph(Graph &graph, set<Edge> &blackEdges, float epsilon, bool (&isRemoved)[]){
     Factory f;
@@ -430,17 +544,16 @@ set<Number> reducedGraph(Graph &graph, set<Edge> &blackEdges, float epsilon, boo
         //najdi vrchol v1 z extra hrany v mnozine, nasledne najdi vrchol v2 extra hrany a hranu pridaj
         addE(rg, rg.find(edge.first.first).operator*().v(), rg.find(edge.first.second).operator*().v());
     }
-
+    set<Number> result;
     for (auto &rot: rg){
         if (n(rot.n(), extraEdges, graph, blackEdges, epsilon, components)==4){
-            set<Number> result;
             result.insert(rot.n());
             for (auto &inc: rot)
                 if (!isFat(extraEdges, pair(inc.n1(), inc.n2()), graph, blackEdges, epsilon, components))
                     for (auto &n:extraEdges.at(pair(inc.n1(), inc.n2())))
                         result.insert(n);
 
-            set<Number> zjednotenie = alfaVertices(result, graph, blackEdges, epsilon, components);
+            set<Number> zjednotenie = smallSetsViaRedEdge(result, graph, blackEdges, epsilon, components, false);
             for (auto &z: zjednotenie)
                 if (result.find(z)==result.end())
                     result.insert(z);
@@ -461,7 +574,6 @@ set<Number> reducedGraph(Graph &graph, set<Edge> &blackEdges, float epsilon, boo
                     treesOfAlfa2Edges.insert(vertices);
                 }
             }
-            set<Number> result;
             if (numOfAlfa2Edges==2) {
                 result.insert(rot.n());
                 for (auto &tree: treesOfAlfa2Edges)
@@ -471,6 +583,53 @@ set<Number> reducedGraph(Graph &graph, set<Edge> &blackEdges, float epsilon, boo
             return result;
         }
     }
+    //v redukovanom grafe najdeme netucnu hranu s alfa>=3
+    for (auto &rot: rg){
+        for (auto &inc: rot){
+            set<Number> vertices;
+            Number v1, v2;
+            if (extraEdges.find(pair(inc.n1(), inc.n2())) != extraEdges.end()) {
+                vertices = extraEdges.at(pair(inc.n1(), inc.n2()));
+                v1 = inc.n1();
+                v2 = inc.n2();
+            }
+            if (extraEdges.find(pair(inc.n2(), inc.n1())) != extraEdges.end()) {
+                vertices = extraEdges.at(pair(inc.n2(), inc.n1()));
+                v1 = inc.n2();
+                v2 = inc.n1();
+            }
+
+            if ((!isFat(extraEdges, pair(inc.n1(), inc.n2()), graph, blackEdges, epsilon, components))&&
+            (alfa(vertices, graph, blackEdges, epsilon, components)>=3)){
+                //oznacime 2 vrcholy spojene cez externe cierne hrany
+                //TODO: K is a tree - pokial 2 externe hrany odkazuju na 1 vrchol tak nie
+                set<Number> k;
+                for (auto &n: vertices)
+                    k.insert(n);
+                k.insert(v1);
+                k.insert(v2);
+
+                struct node* root = createNode(v1);
+
+                createSubtree(graph, root, k, blackEdges);
+
+                designateNodes(graph, root, blackEdges, epsilon, components, v1, v2);
+
+                set<node*> nodes;
+
+                nodes = getDesignatedNodes(root, nodes);
+
+                for (auto &nd: nodes){
+                    set<Number> subtreeVertices = getSubtreeVertices(graph, nd, subtreeVertices);
+                    if (s(subtreeVertices, graph, blackEdges, epsilon, components)<=20/(epsilon/(1+2*epsilon)))
+                        return smallSetsViaRedEdge(subtreeVertices, graph, blackEdges, epsilon, components, false);
+                }
+
+            }
+        }
+    }
+
+    return result;
 }
 
 /*
@@ -478,7 +637,7 @@ set<Number> reducedGraph(Graph &graph, set<Edge> &blackEdges, float epsilon, boo
 * a zaroven nech je cervenych hran viac ako ciernych.
 * Najdeme mnozinu urcitej/obmedzenej velkosti taku, ze cervenych interncyh hran je viac ako ciernych externych
 */
-vector<Vertex> redBlackEdges(Graph g, set<Edge> &blackEdges, float epsilon) {
+set<Number> redBlackEdges(Graph &g, set<Edge> &blackEdges, float epsilon) {
     assert(blackEdges.size()<=g.size()/2); //podla lemy musi byt pocet cervenych hran vacsi ako pocet vrcholov grafu zmenseny o polovicu
 
     Factory f;
@@ -487,17 +646,25 @@ vector<Vertex> redBlackEdges(Graph g, set<Edge> &blackEdges, float epsilon) {
         addE(ciernyGraf, e, f);
 
     set<set<Number>> rodinaCiernychKomponentov = connectedComponents(ciernyGraf);
+
     //z rodinaCiernychKomponentov budeme neskor vyhadzovat jednotlive elementy, zostane tam velka tenka
     //mnozina s nejakymi vlastnostami a nasledne najdeme mnozinu splnajucu lemu
 
-    //TODO: some simple cases such that small positive set or 2 small sets connected via a red edge
+    //some simple cases such that small positive set or 2 (or more) small sets connected via a red edge
+    for (auto &comp: rodinaCiernychKomponentov){
+        if (isPositive(comp, g, blackEdges))
+            return comp;
+        else if (isPositive(smallSetsViaRedEdge(comp, g, blackEdges, epsilon, rodinaCiernychKomponentov, true), g, blackEdges))
+            return smallSetsViaRedEdge(comp, g, blackEdges, epsilon, rodinaCiernychKomponentov, true);
+    }
 
     step1(g, blackEdges, epsilon, rodinaCiernychKomponentov);
 
     step2(g, blackEdges, epsilon, rodinaCiernychKomponentov);
 
+    bool (isRemoved[g.order()]);
 
-
-    //float delta = epsilon/(1+2*epsilon);
+    //cast was offered by CLion, without casting no building was able
+    return reducedGraph(g, blackEdges, epsilon, reinterpret_cast<bool (&)[]>(isRemoved));
 
 }
