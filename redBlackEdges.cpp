@@ -64,7 +64,8 @@ void DFS(Number n, map<Number, int> &visited, Graph &g, set<Number> &vertices) {
     }
 }
 
-void DFS2(Number n, map<Number, int> &visited, Graph &graph, set<Number> g, set<Number> &vertices, const bool isRemoved[]){
+void DFS2(Number n, map<Number, int> &visited, Graph &graph,
+        set<Number> g, set<Number> &vertices, const bool isRemoved[]){
     // oznac vrchol ako navstiveny a pridaj ho do komponentu
     visited[n] = true;
     vertices.insert(n);
@@ -72,7 +73,8 @@ void DFS2(Number n, map<Number, int> &visited, Graph &graph, set<Number> g, set<
     //kazdy nenavstiveny susedny vrchol pridaj do komponentu aj s hranou ktorou sme ho objavili
     for (auto &inc: graph[n]){
         Number neighbor = inc.n2();
-        //pokial dany sused vrcholu z povodneho grafu je este nenavstiveny, nie je oznaceny ako vymazany a zaroven patri do mnoziny vertitces
+        //pokial dany sused vrcholu z povodneho grafu je este nenavstiveny,
+        // nie je oznaceny ako vymazany a zaroven patri do mnoziny vertitces
         if (((!visited[neighbor])&&(!isRemoved))&&(vertices.find(neighbor)!=vertices.end())){
             vertices.insert(neighbor);
             visited[neighbor] = true;
@@ -105,7 +107,7 @@ vector<Graph> getComponents(Graph &g) {
             DFS0(rot, visited, g, f, graph);
             for(auto &rot1: graph)
                 for(auto it: g[rot1.n()].list(IP::primary()))
-                    if(graph.contains(it->n2()))
+                    if(graph.find(it->n2())!=graph.end())
                         addE(graph, rot1, it->r2(), it->e(), f);
             components.push_back(std::move(graph));
         }
@@ -117,10 +119,10 @@ set<set<Number>> connectedComponents(Graph &g) {
     set<set<Number>> components;
     map<Number, int> visited;
     for(auto &rot: g) visited[rot.n()]=0;
-    set<Number> vertices;
 
     //najdeme nenavstiveny vrchol a nasledne najdeme hrany a vrcholy s nim spojene
     for (auto &rot: g) {
+        set<Number> vertices;
         if (!visited[rot.n()]) {
             DFS(rot.n(), visited, g, vertices);
             components.insert(vertices);
@@ -129,7 +131,8 @@ set<set<Number>> connectedComponents(Graph &g) {
     return components;
 }
 
-//isRemoved nekoresponduje s isRemoved v redukcii grafu, tuto mame oznacene vrcholy isRemoved tie, ktore nepatria do vymazanych stromov. Paradox.
+//isRemoved nekoresponduje s isRemoved v redukcii grafu, tuto mame oznacene vrcholy isRemoved tie,
+// ktore nepatria do vymazanych stromov. Paradox.
 set<set<Number>> connectedComponents(Graph &graph, set<Number> g, const bool isRemoved[]){
     set<set<Number>> components;
     map<Number, int> visited;
@@ -147,10 +150,11 @@ set<set<Number>> connectedComponents(Graph &graph, set<Number> g, const bool isR
 }
 
 //probably unusefull
-set<set<Number>> blackComponents(Graph g, set<Edge> blackEdges){
+set<set<Number>> blackComponents(Graph g, set<pair<Number, Number>> blackEdges){
     for (auto &rot:g){
-        for(auto &inc:rot){
-            if (blackEdges.find(inc.e())==blackEdges.end()){
+        for(auto &inc:g[rot.n()]){
+            if ((blackEdges.find(pair(inc.n1(), inc.n2()))==blackEdges.end())&&
+            (blackEdges.find(pair(inc.n2(), inc.n1()))==blackEdges.end())){
                 deleteE(g, inc.e()); //kedze neposielam graf g do funkcie cez referenciu, nemalo by ho to zmenit
             }
         }
@@ -159,17 +163,18 @@ set<set<Number>> blackComponents(Graph g, set<Edge> blackEdges){
 }
 
 // set is positive if it has more internal red edges, negative if there are more external black edges, neutral if equal
-int isPositive(set<Number> vertices, Graph &g, set<Edge> blackEdges){
+int isPositive(set<Number> vertices, Graph &g, set<pair<Number, Number>> blackEdges){
     int intRedEdges = 0, extBlackEdges = 0;
-    for (auto &rot: g){
-        if (vertices.find(rot.n())!=vertices.end()) //overujeme ci dany vrchol rot sa nachadza v nasej mnozine, kedze iba ta nas zaujima
-            for (auto it: g[rot.n()].list(IP::primary())){
-                //pokial je sused mimo nasej mnoziny a je spojeny ciernou hranou, ta musi byt externa
-                if ((blackEdges.find(it->e())!=blackEdges.end())&&(vertices.find(it->n2()) == vertices.end()))
-                    extBlackEdges++;
-                else if ((blackEdges.find(it->e())==blackEdges.end())&&(vertices.find(it->n2()) != vertices.end()))
-                    intRedEdges++;
-            }
+    for (auto &n: vertices){
+        for (auto &inc: g[n]){
+            if (((blackEdges.find(pair(inc.n1(), inc.n2()))!=blackEdges.end())||
+            (blackEdges.find(pair(inc.n2(), inc.n1()))!=blackEdges.end()))&&(vertices.find(inc.n2()) == vertices.end()))
+                extBlackEdges++;
+            else if (((blackEdges.find(pair(inc.n1(), inc.n2()))==blackEdges.end())
+            &&(blackEdges.find(pair(inc.n2(), inc.n1()))==blackEdges.end()))&&
+            ((vertices.find(inc.n2())!=vertices.end())&&(inc.n1().to_int()<inc.n2().to_int())))//every edge count only once
+                intRedEdges++;
+        }
     }
     if (intRedEdges>extBlackEdges)
         return 1;
@@ -180,27 +185,29 @@ int isPositive(set<Number> vertices, Graph &g, set<Edge> blackEdges){
 
 //trosku zbytocna funkcia, ale budis...
 //pri step1 vyzadujem mnozinu
-bool isLarge(set<Number> vertices, Graph &g, set<Edge> blackEdges, float epsilon){
+bool isLarge(set<Number> vertices, Graph &g, set<pair<Number, Number>> blackEdges, float epsilon){
     return (vertices.size() > (1+2*epsilon)/epsilon);
 }
 
 //optional TODO: opakujuci sa kod vo funkciach alfa() a s() a smallSetsViaRedEdge()
 
 //pocet cervenych hran medzi mnozinou vertices a malymi mnozinami
-int alfa(set<Number> &vertices, Graph &g, set<Edge> blackEdges, float epsilon, set<set<Number>> &connectedComponents){
+int alfa(set<Number> &vertices, Graph &g, set<pair<Number, Number>> blackEdges,
+        float epsilon, set<set<Number>> &connectedComponents){
     int result = 0;
     for (auto &comp: connectedComponents)
         if (!isLarge(vertices, g, blackEdges, epsilon))
             for (auto &n: vertices)
                 for (auto it: g[n].list(IP::primary()))
-                    if ((blackEdges.find(it->e())==blackEdges.end())&&(comp.find(it->n2()) != comp.end()))
+                    if (((blackEdges.find(pair(it->n1(), it->n2()))==blackEdges.end())&&
+                    (blackEdges.find(pair(it->n2(), it->n1()))==blackEdges.end()))&&(comp.find(it->n2()) != comp.end()))
                         result ++;
     return result;
 }
 
 //zjednotenie mnoziny vertices s malymi setmi spojenych cervenou hranou
 //addOnlyOneSet is on when simple cases such that 2 small sets connected via red edge
-set<Number> smallSetsViaRedEdge(set<Number> vertices, Graph &g, set<Edge> blackEdges, float epsilon,
+set<Number> smallSetsViaRedEdge(set<Number> vertices, Graph &g, set<pair<Number, Number>> blackEdges, float epsilon,
                                 set<set<Number>> &connectedComponents, bool addOnlyOneSet) {
     set<Number> addedVertices;
     for (auto &n: vertices) addedVertices.insert(n);
@@ -210,12 +217,16 @@ set<Number> smallSetsViaRedEdge(set<Number> vertices, Graph &g, set<Edge> blackE
         if (!isLarge(vertices, g, blackEdges, epsilon)) //zoberieme maly komponent
             for (auto &n: comp){ //prechadzame vrcholmi nasej mnoziny
                 for (auto it: g[n].list(IP::primary())){ //prejdeme hranami daneho vrchola
-                    if ((blackEdges.find(it->e())==blackEdges.end())&&((vertices.find(it->n2()))!=vertices.end())){
+                    if (((blackEdges.find(pair(it->n1(), it->n2()))==blackEdges.end())&&
+                    (blackEdges.find(pair(it->n2(), it->n1()))==blackEdges.end()))
+                    &&((vertices.find(it->n2()))!=vertices.end())){
                         //pokial je dana hrana cervena a zaroven na druhej strane je vrchol z komponentu
                         for (auto &vertexToAdd: comp)
                             addedVertices.insert(vertexToAdd);
                         compFound = true;
-                        break; //po najdeni daneho komponentu chcem vyliezt z for cyklov for(it) aj for (n) a ist na dalsi kmponent v poradi
+                        break;
+                        //po najdeni daneho komponentu chcem vyliezt z for cyklov for(it) aj for (n) a ist na dalsi
+                        // komponent v poradi
                     }
                 }
                 if (compFound) break;
@@ -227,18 +238,22 @@ set<Number> smallSetsViaRedEdge(set<Number> vertices, Graph &g, set<Edge> blackE
 }
 
 //velkost zjednotenia mnoziny vertices s malymi mnozinami spojenymi cervenou hranou
-int s(set<Number> &vertices, Graph &g, set<Edge> blackEdges, float epsilon, set<set<Number>> connectedComponents){
+int s(set<Number> &vertices, Graph &g, set<pair<Number, Number>> blackEdges,
+        float epsilon, set<set<Number>> connectedComponents){
     int result = vertices.size();
     for (auto &comp: connectedComponents){
         bool compFound = false;
         if (!isLarge(vertices, g, blackEdges, epsilon)) //zoberieme maly komponent
             for (auto &n: vertices){ //prechadzame vrcholmi nasej mnoziny
                 for (auto it: g[n].list(IP::primary())){ //prejdeme hranami daneho vrchola
-                    if ((blackEdges.find(it->e())==blackEdges.end())&&((comp.find(it->n2()))!=comp.end())){
+                    if (((blackEdges.find(pair(it->n1(), it->n2()))==blackEdges.end())&&
+                    (blackEdges.find(pair(it->n2(), it->n1()))==blackEdges.end()))&&((comp.find(it->n2()))!=comp.end())){
                         //pokial je dana hrana cervena a zaroven na druhej strane je vrchol z komponentu
                         result += comp.size();
                         compFound = true;
-                        break; //po najdeni daneho komponentu chcem vyliezt z for cyklov for(it) aj for (n) a ist na dalsi kmponent v poradi
+                        break;
+                        //po najdeni daneho komponentu chcem vyliezt z for cyklov for(it) aj for (n) a ist na
+                        // dalsi komponent v poradi
                     }
                 }
                 if (compFound) break;
@@ -247,7 +262,8 @@ int s(set<Number> &vertices, Graph &g, set<Edge> blackEdges, float epsilon, set<
     return result;
 }
 
-bool isThin(std::set<Number> vertices, Graph &g, std::set<Edge> &blackEdges, float epsilon, set<set<Number>> connectedComponents){
+bool isThin(set<Number> vertices, Graph &g, set<pair<Number, Number>> &blackEdges,
+        float epsilon, set<set<Number>> connectedComponents){
     return s(vertices, g, blackEdges, epsilon, connectedComponents)<=
            (alfa(vertices, g, blackEdges, epsilon, connectedComponents)+1)/(epsilon/(1+2*epsilon));
 
@@ -259,11 +275,13 @@ bool isThin(std::set<Number> vertices, Graph &g, std::set<Edge> &blackEdges, flo
 /*
  * pre spravne fungovanie musi byt mnozina vertices niektory jeden cely cierny komponent
  */
-int r(std::set<Number> vertices, Graph g, std::set<Edge> blackEdges, float epsilon, set<set<Number>> connectedComponents){
+int r(set<Number> vertices, Graph g, set<pair<Number, Number>> blackEdges,
+        float epsilon, set<set<Number>> connectedComponents){
     int numOfBlackEdges = 0; //pocet ciernych hran medzi vrcholmi vo vertices
     for (auto &n: vertices){
         for (auto it: g[n].list(IP::primary())){ //prejdeme incidentne hrany vrchola
-            if (blackEdges.find(it->e())!=blackEdges.end()){
+            if ((blackEdges.find(pair(it->n1(), it->n2()))!=blackEdges.end())||
+            (blackEdges.find(pair(it->n2(), it->n1()))!=blackEdges.end())){
                 numOfBlackEdges++;
             }
         }
@@ -277,7 +295,7 @@ int r(std::set<Number> vertices, Graph g, std::set<Edge> blackEdges, float epsil
 /*
 * vyhadzujeme male sety v ktorych sa nachadzaju cierne cykly
 */
-void step1(Graph &g, set<Edge> blackEdges, float epsilon, set<set<Number>> &connectedComponents){
+void step1(Graph &g, set<pair<Number, Number>> blackEdges, float epsilon, set<set<Number>> &connectedComponents){
     for (auto &comp: connectedComponents){
         if (!isLarge(comp, g, blackEdges, epsilon)){
             int b1 = 0, b3 = 0;
@@ -300,21 +318,19 @@ void step1(Graph &g, set<Edge> blackEdges, float epsilon, set<set<Number>> &conn
 }
 
 //funkcia vyhodi komponent toErase a aj vsetky male komponenty s nim spojene cervenou hranou
-void eraseLargeThickComp(Graph &g, set<Edge> blackEdges, float epsilon, set<set<Number>> &connectedComponents, set<Number> toErase){
+void eraseLargeThickComp(Graph &g, set<pair<Number, Number>> blackEdges, float epsilon,
+        set<set<Number>> &connectedComponents, set<Number> toErase){
     set<set<Number>> erasedComponents;
 
-    for (auto &comp: connectedComponents) {
-        if (!isLarge(comp, g, blackEdges, epsilon)) { //v malych setoch prejdem vrcholy a zistim ci nemaju cervenu hranu s toErase. ak hej, tak komponent vyhodim
-            for (auto &n: comp) {
-                for (auto it: g[n].list(IP::primary())) {
-                    if ((blackEdges.find(it->e()) == blackEdges.end()) &&
-                        (toErase.find(it->n2()) != toErase.end())) {
+    for (auto &comp: connectedComponents)
+        if (!isLarge(comp, g, blackEdges, epsilon))
+            //v malych setoch prejdem vrcholy a zistim ci nemaju cervenu hranu s toErase. ak hej, tak komponent vyhodim
+            for (auto &n: comp)
+                for (auto it: g[n].list(IP::primary()))
+                    if (((blackEdges.find(pair(it->n1(), it->n2())) == blackEdges.end())&&
+                    (blackEdges.find(pair(it->n2(), it->n1()))==blackEdges.end()))&&(toErase.find(it->n2())!=toErase.end()))
                         erasedComponents.insert(comp);
-                    }
-                }
-            }
-        }
-    }
+
     erasedComponents.insert(toErase);
     auto isErased = [&](std::set<Number> conC){return erasedComponents.count(conC)>0;};
 
@@ -331,7 +347,7 @@ void eraseLargeThickComp(Graph &g, set<Edge> blackEdges, float epsilon, set<set<
 /*
  * vyhadzujeme large thick sety aj s malymi setmi cervenou hranou s nimi spojenymi
  */
-void step2(Graph &g, set<Edge> blackEdges, float epsilon, set<set<Number>> &connectedComponents){
+void step2(Graph &g, set<pair<Number, Number>> blackEdges, float epsilon, set<set<Number>> &connectedComponents){
     //z rodiny komponentov budeme vyhadzovat prvky pokym tam budu, pricom vyhadzoavnim sa mozu zmenit tenke mnoziny
     // na hrube a naopak, preto prehladavanie ukoncime az ked od posledneho najdenia neprejdeme vsetky prvky
 
@@ -360,7 +376,8 @@ void step2(Graph &g, set<Edge> blackEdges, float epsilon, set<set<Number>> &conn
 }
 
 //fat is edge which refers to set vertices
-bool isFat(map<pair<Number, Number>, set<Number>> &extraEdges, pair<Number, Number> edge, Graph &g, set<Edge> &blackEdges, float epsilon, set<set<Number>> connectedComponents){
+bool isFat(map<pair<Number, Number>, set<Number>> &extraEdges, pair<Number, Number> edge, Graph &g,
+        set<pair<Number, Number>> &blackEdges, float epsilon, set<set<Number>> connectedComponents){
     set<Number> vertices;
     if (extraEdges.find(edge)!=extraEdges.end()) {
         vertices = extraEdges.at(edge);
@@ -373,7 +390,8 @@ bool isFat(map<pair<Number, Number>, set<Number>> &extraEdges, pair<Number, Numb
 }
 
 //sum of alfas of non-fat edges (components represented by edge in reduced graph) incident to vertex
-int n(Number vertex, map<pair<Number, Number>, set<Number>> &extraEdges, Graph &g, set<Edge> &blackEdges, float epsilon, set<set<Number>> connectedComponents){
+int n(Number vertex, map<pair<Number, Number>, set<Number>> &extraEdges, Graph &g,
+        set<pair<Number, Number>> &blackEdges, float epsilon, set<set<Number>> connectedComponents){
     int totalAlfa = 0;
 
     for (auto &inc: g[vertex])
@@ -389,7 +407,7 @@ int n(Number vertex, map<pair<Number, Number>, set<Number>> &extraEdges, Graph &
 }
 
 //create reference between deleted tree in step 1 a 2 of reducing and the edge which represents it
-map<pair<Number, Number>, set<Number>> edgeRef(Graph &graph, bool (&isRemoved)[], set<Edge> blackEdges){
+map<pair<Number, Number>, set<Number>> edgeRef(Graph &graph, bool (&isRemoved)[], set<pair<Number, Number>> blackEdges){
     map<pair<Number, Number>, set<Number>> er;
     set<set<Number>> components = connectedComponents(graph);
     //int edgeCounter = 0;
@@ -403,11 +421,13 @@ map<pair<Number, Number>, set<Number>> edgeRef(Graph &graph, bool (&isRemoved)[]
 
         set<set<Number>> reducedComponents = connectedComponents(graph, comp, isRemoved);
         for (auto &rc: reducedComponents){
-            vector<Number> vertices; //kazdy komponent bude predstavovany jednou hranou - z vrchola v1 do v2 (moze to byt aj ten isty vrchol)
+            vector<Number> vertices;
+            //kazdy komponent bude predstavovany jednou hranou - z vrchola v1 do v2(moze to byt aj ten isty vrchol)
             set<Number> allVerticesInComponent; //komponent budu tvorit len vrcholy
             for (auto &n: rc) {
                 for (auto &inc: graph[n])
-                    if ((blackEdges.find(inc.e()) != blackEdges.end()) && (!isRemoved[inc.n2().to_int()]))
+                    if (((blackEdges.find(pair(inc.n1(), inc.n2()))!=blackEdges.end())||
+                    (blackEdges.find(pair(inc.n2(), inc.n1())) != blackEdges.end())) && (!isRemoved[inc.n2().to_int()]))
                         vertices.push_back(inc.n2());
                 allVerticesInComponent.insert(n);
             }
@@ -440,7 +460,8 @@ void reduceStep1(Graph &g, set<Number> graphToReduce, bool (&isRemoved)[]){
     }
 }
 
-//v komponente zo zvysnych vrcholov nechame iba vrcholy stupna 3, cesty edzi nimi nahradime jednou hranou (vo funkcii edgeRef)
+//v komponente zo zvysnych vrcholov nechame iba vrcholy stupna 3,
+//cesty edzi nimi nahradime jednou hranou (vo funkcii edgeRef)
 void reduceStep2(Graph &g, set<Number> graphToReduce,  bool (&isRemoved)[]) {
     bool toRemove[g.order()];
     for (auto &n: graphToReduce) {
@@ -451,7 +472,8 @@ void reduceStep2(Graph &g, set<Number> graphToReduce,  bool (&isRemoved)[]) {
         if (g[n].neighbours().size() - removedNeighbors < 3) // == 2
             toRemove[n.to_int()] = true;
     }
-    //najprv som si vymazanie dvojkovych zaznacil, az potom naraz som ich vymazal, lebo inak by som vymazal prakticky vsetky vrhcoly
+    //najprv som si vymazanie dvojkovych zaznacil, az potom naraz som ich vymazal,
+    //lebo inak by som vymazal prakticky vsetky vrhcoly
     for (auto &a:toRemove){
         if (toRemove[a]){
             isRemoved[a] = true;
@@ -460,10 +482,11 @@ void reduceStep2(Graph &g, set<Number> graphToReduce,  bool (&isRemoved)[]) {
 }
 
 //
-node* createSubtree(Graph &graph, node* &root, set<Number> &vertices, set<Edge> edges){
+node* createSubtree(Graph &graph, node* &root, set<Number> &vertices, set<pair<Number, Number>> edges){
     for (auto &inc: graph[root->vertex])
         //aby sme sa z vrchola pozerali do podstromu a po spravnej hrane
-        if ((vertices.find(inc.n2())!=vertices.end())&&(edges.find(inc.e())!=edges.end())) {
+        if ((vertices.find(inc.n2())!=vertices.end())&&((edges.find(pair(inc.n1(), inc.n2()))!=edges.end())||
+                (edges.find(pair(inc.n2(), inc.n1()))!=edges.end()))) {
             if (root->parent->vertex != inc.n2()) { //pokial sa pozeram na vrchol ktory je mojim otcom tak nic nerob
                 node* newNode = createNode(inc.n2());
                 if (root->left == NULL)
@@ -484,7 +507,7 @@ set<Number> getSubtreeVertices(Graph &graph, node* root, set<Number> &subtreeVer
 
 bool isNodeInSubtree(Graph &graph, node* root, Number wanted){
     if (wanted.to_int()==root->vertex.to_int()) return true;
-    if (root->vertex==NULL) return false;
+    if (root==NULL) return false;
     return (isNodeInSubtree(graph, root->left, wanted)||(isNodeInSubtree(graph, root->right, wanted)));
 }
 
@@ -495,7 +518,8 @@ void undesignateNodesAbove(node* root){
     }
 }
 
-void designateNodes(Graph &graph, node* root, set<Edge> blackEdges, float epsilon, set<set<Number>> components, Number marked1, Number marked2){
+void designateNodes(Graph &graph, node* root, set<pair<Number, Number>> blackEdges,
+        float epsilon, set<set<Number>> components, Number marked1, Number marked2){
     if ((!isNodeInSubtree(graph, root, marked1))&&(!isNodeInSubtree(graph, root, marked2))) {
         set<Number> subtreeVertices = getSubtreeVertices(graph, root, subtreeVertices);
         if (alfa(subtreeVertices, graph, blackEdges, epsilon, components) == 2) {
@@ -518,13 +542,13 @@ set<node*> getDesignatedNodes(node* root, set<node*> &nodes){
 }
 
 //function creates reducedGraph from graph - reduceStep1 and reduceStep2
-set<Number> reducedGraph(Graph &graph, set<Edge> &blackEdges, float epsilon, bool (&isRemoved)[]){
+set<Number> reducedGraph(Graph &graph, set<pair<Number, Number>> &blackEdges, float epsilon, bool (&isRemoved)[]){
     Factory f;
     Graph blackComponents(createG(f));
     for (int i = 0; i<graph.order(); i++)
         addV(blackComponents, i, f);
     for(auto &e: blackEdges)
-        addE(blackComponents, e, f);
+        addE(blackComponents, Loc(e.first, e.second), f);
     set<set<Number>> components = connectedComponents(blackComponents);
     for (auto &comp: components){
         reduceStep1(graph, comp, isRemoved);
@@ -537,7 +561,8 @@ set<Number> reducedGraph(Graph &graph, set<Edge> &blackEdges, float epsilon, boo
         if (!isRemoved[rot.n().to_int()]) {
             addV(rg, rot.n());
             for (auto &inc: rot) //add black edges between added vertices to rg
-                if (blackEdges.find(inc.e())!=blackEdges.end()) //only if edge is not added yet
+                if ((blackEdges.find(pair(inc.n1(), inc.n2()))!=blackEdges.end())||
+                (blackEdges.find(pair(inc.n2(), inc.n1()))!=blackEdges.end())) //only if edge is not added yet
                     addE(rg, inc.e());
         }
     for (auto &edge: extraEdges) { //add edges between extra verices - these edges reference to removed subgraphs
@@ -637,13 +662,7 @@ set<Number> reducedGraph(Graph &graph, set<Edge> &blackEdges, float epsilon, boo
 * a zaroven nech je cervenych hran viac ako ciernych.
 * Najdeme mnozinu urcitej/obmedzenej velkosti taku, ze cervenych interncyh hran je viac ako ciernych externych
 */
-set<Number> redBlackEdges(Graph &g, set<Edge> &blackEdges, float epsilon) {
-    assert(blackEdges.size()<=g.size()/2); //podla lemy musi byt pocet cervenych hran vacsi ako pocet vrcholov grafu zmenseny o polovicu
-
-    Factory f;
-    Graph ciernyGraf(createG(f));
-    for(auto &e: blackEdges)
-        addE(ciernyGraf, e, f);
+set<Number> redBlackEdges(Graph &g, set<pair<Number, Number>> &blackEdges, float epsilon, Graph &ciernyGraf) {
 
     set<set<Number>> rodinaCiernychKomponentov = connectedComponents(ciernyGraf);
 

@@ -68,10 +68,10 @@ int main() {
     addE(g, Loc( 29, 30), f);
     addE(g, Loc( 30, 31), f);
 
-    set<Edge> blackEdges;
+    set<pair<Number, Number>> blackEdges;
     Graph blackGraph(createG(f));
     for (auto &rot: g)
-        addV(blackGraph, rot.n());
+        addV(blackGraph, rot.n().to_int(), f);
     addE(blackGraph, Loc( 0, 4), f);
     addE(blackGraph, Loc( 1, 2), f);
     addE(blackGraph, Loc( 2, 3), f);
@@ -107,7 +107,7 @@ int main() {
     for (auto &rot: blackGraph){
         for (auto &inc: rot){
             if (inc.n1()<inc.n2())
-                blackEdges.insert(inc.e());
+                blackEdges.insert(pair(inc.n1(), inc.n2()));
         }
     }
 
@@ -116,13 +116,15 @@ int main() {
     cout<< "Zvol hodnotu epsilon z intervalu (0, 1/2)\n";//pozn: prilis velke alebo male epsilon nam nemusia vyhovovat
     cin >> epsilon;
 
-    cout<<blackEdges<<"\n";
+    assert((g.size()-blackGraph.size())>((1/2+epsilon)*g.order()));
+
+    cout<<blackGraph<<"\n";
 
 
     cout<<g<<"\n";
 
 
-    set<Number> ourSet = redBlackEdges(g, blackEdges, epsilon);
+    set<Number> ourSet = redBlackEdges(g, blackEdges, epsilon, blackGraph);
 
     cout<<ourSet;
 
