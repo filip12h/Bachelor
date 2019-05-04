@@ -426,16 +426,21 @@ map<pair<Number, Number>, set<Number>> edgeRef(Graph &graph, map<Number, bool> &
             for (auto &rtc: reducedTreesOfComponent){
                 vector<Number> vertices;
                 //kazdy komponent bude predstavovany jednou hranou - z vrchola v1 do v2(moze to byt aj ten isty vrchol)
-                set<Number> allVerticesInComponent; //komponent budu tvorit len vrcholy
+                bool bothVerticesFound = false;
                 for (auto &n: rtc){
                     for (auto &inc: graph[n])
                         if (((blackEdges.find(pair(inc.n1(), inc.n2()))!=blackEdges.end())||
                              (blackEdges.find(pair(inc.n2(), inc.n1())) != blackEdges.end())) &&
-                             (kernelOfComponent.find(inc.n2())!=kernelOfComponent.end()))
+                             (kernelOfComponent.find(inc.n2())!=kernelOfComponent.end())) {
                             vertices.push_back(inc.n2());
-                    allVerticesInComponent.insert(n);
+                            if (vertices.size()==2) {
+                                bothVerticesFound = true;
+                                break;
+                            }
+                        }
+                    if (bothVerticesFound) break;
                 }
-                er.insert(make_pair(make_pair(vertices[0], vertices[1]), allVerticesInComponent));
+                er.insert(make_pair(make_pair(vertices[0], vertices[1]), rtc));
             }
 
 //            for (auto &n: rc) {
@@ -583,13 +588,19 @@ set<Number> reducedGraph(Graph &graph, set<pair<Number, Number>> &blackEdges, fl
 
     Graph rg(createG(f)); //create reduced graph rg
     for (auto &rot: graph) // add all remaining (not removed) vertices in graph to rg
-        if (!isRemoved[rot.n()]) {
+        if (!isRemoved[rot.n()])
             addV(rg, rot.n());
-            for (auto &inc: rot) //add black edges between added vertices to rg
-                if ((blackEdges.find(pair(inc.n1(), inc.n2()))!=blackEdges.end())||
-                (blackEdges.find(pair(inc.n2(), inc.n1()))!=blackEdges.end())) //only if edge is not added yet
-                    addE(rg, inc.e());
-        }
+
+    for (auto &rot: rg)
+        for (auto &inc: graph[rot.n()])//add black edges between added vertices to rg
+            //every vertex check only once, and vertex on the other side of the edge must be not removed
+            if ((inc.n1().to_int()<inc.n2().to_int())&&(!isRemoved[inc.n2()])) {
+                if (blackEdges.find(pair(inc.n1(), inc.n2())) != blackEdges.end())
+                    addE(rg, Loc(inc.n1(), inc.n2()));
+                else if (blackEdges.find(pair(inc.n2(), inc.n1())) != blackEdges.end()) //only if edge is not added yet
+                    addE(rg, Loc(inc.n2(), inc.n1()));
+            }
+
     for (auto &edge: extraEdges) { //add edges between extra verices - these edges reference to removed subgraphs
         //najdi vrchol v1 z extra hrany v mnozine, nasledne najdi vrchol v2 extra hrany a hranu pridaj
         addE(rg, rg.find(edge.first.first).operator*().v(), rg.find(edge.first.second).operator*().v());
