@@ -65,7 +65,7 @@ void DFS(Number n, map<Number, int> &visited, Graph &g, set<Number> &vertices) {
 }
 
 void DFS2(Number n, map<Number, int> &visited, Graph &graph,
-        set<Number> g, set<Number> &vertices, const bool isRemoved[]){
+        set<Number> g, set<Number> &vertices, map<Number, bool> &isRemoved){
     // oznac vrchol ako navstiveny a pridaj ho do komponentu
     visited[n] = true;
     vertices.insert(n);
@@ -74,12 +74,9 @@ void DFS2(Number n, map<Number, int> &visited, Graph &graph,
     for (auto &inc: graph[n]){
         Number neighbor = inc.n2();
         //pokial dany sused vrcholu z povodneho grafu je este nenavstiveny,
-        // nie je oznaceny ako vymazany a zaroven patri do mnoziny vertitces
-        if (((!visited[neighbor])&&(!isRemoved))&&(vertices.find(neighbor)!=vertices.end())){
-            vertices.insert(neighbor);
-            visited[neighbor] = true;
+        // nie je oznaceny ako vymazany a zaroven este nepatri do mnoziny vertitces
+        if (((!visited[neighbor])&&(!isRemoved[neighbor]))&&(vertices.find(neighbor)==vertices.end()))
             DFS2(neighbor, visited, graph, g, vertices, isRemoved);
-        }
     }
 }
 
@@ -96,11 +93,10 @@ void DFS0(const Rotation &rot, map<Number, int> &visited, Graph &g, Factory &f, 
         }
     }
 }
-vector<Graph> getComponents(Graph &g) {
+vector<Graph> getComponents(Graph &g, Factory f) {
     vector<Graph> components;
     std::map<Number, int> visited;
     for(auto &rot: g) visited[rot.n()]=0;
-    Factory f;
     Graph graph(createG(f));
     for (auto &rot: g)
         if (!visited[rot.n()]) {
@@ -133,15 +129,15 @@ set<set<Number>> connectedComponents(Graph &g) {
 
 //isRemoved nekoresponduje s isRemoved v redukcii grafu, tuto mame oznacene vrcholy isRemoved tie,
 // ktore nepatria do vymazanych stromov. Paradox.
-set<set<Number>> connectedComponents(Graph &graph, set<Number> g, const bool isRemoved[]){
+set<set<Number>> connectedComponents(Graph &graph, set<Number> g, map<Number, bool> &isRemoved){
     set<set<Number>> components;
     map<Number, int> visited;
     for(auto &n: g) visited[n]=0;
-    set<Number> vertices;
 
     //najdeme nenavstiveny vrchol a nasledne najdeme hrany a vrcholy s nim spojene
     for (auto &n: g) {
-        if ((!visited[n])&&(!isRemoved[n.to_int()])) {
+        if ((!visited[n])&&(!isRemoved[n])) {
+            set<Number> vertices;
             DFS2(n, visited, graph, g, vertices, isRemoved);
             components.insert(vertices);
         }
@@ -295,14 +291,16 @@ int r(set<Number> vertices, Graph g, set<pair<Number, Number>> blackEdges,
 /*
 * vyhadzujeme male sety v ktorych sa nachadzaju cierne cykly
 */
-void step1(Graph &g, set<pair<Number, Number>> blackEdges, float epsilon, set<set<Number>> &connectedComponents){
+void step1(Graph &g, set<pair<Number, Number>> blackEdges, float epsilon, set<set<Number>> &connectedComponents,
+           map<Number, bool> &isRemoved){
     for (auto &comp: connectedComponents){
         if (!isLarge(comp, g, blackEdges, epsilon)){
             int b1 = 0, b3 = 0;
             for (auto &n: comp){
                 int pocetCiernychHran = 0;
-                for(auto it: g[n].list(IP::primary()))
-                    if(comp.find(it->n2())!=comp.end())
+                for(auto &inc: g[n])
+                    if((comp.find(inc.n2())!=comp.end())&&((blackEdges.find(pair(inc.n1(), inc.n2()))!=blackEdges.end())
+                    ||(blackEdges.find(pair(inc.n2(), inc.n1()))!=blackEdges.end())))
                         pocetCiernychHran++;
                 assert((pocetCiernychHran>0)&&(pocetCiernychHran<4));
                 if (pocetCiernychHran==1)
@@ -311,16 +309,21 @@ void step1(Graph &g, set<pair<Number, Number>> blackEdges, float epsilon, set<se
                     b3++;
             }
             if (b1<=b3)
-                connectedComponents.erase(connectedComponents.find(comp));
-                //connectedComponents.erase(remove(connectedComponents.begin(), connectedComponents.end(), comp));
+                for (auto &n: comp)
+                    isRemoved[n] = true;
         }
     }
+//
+//    auto isErased = [&](std::set<Number> conC){return erasedComponents.count(conC)>0;};
+//
+//    for(auto it=connectedComponents.begin(); it!=connectedComponents.end(); it++)
+//        if (isErased(*it))
+//            it = connectedComponents.erase(it);
 }
 
 //funkcia vyhodi komponent toErase a aj vsetky male komponenty s nim spojene cervenou hranou
 void eraseLargeThickComp(Graph &g, set<pair<Number, Number>> blackEdges, float epsilon,
-        set<set<Number>> &connectedComponents, set<Number> toErase){
-    set<set<Number>> erasedComponents;
+        set<set<Number>> &connectedComponents, set<Number> toErase, map<Number, bool> &isRemoved){
 
     for (auto &comp: connectedComponents)
         if (!isLarge(comp, g, blackEdges, epsilon))
@@ -328,26 +331,17 @@ void eraseLargeThickComp(Graph &g, set<pair<Number, Number>> blackEdges, float e
             for (auto &n: comp)
                 for (auto it: g[n].list(IP::primary()))
                     if (((blackEdges.find(pair(it->n1(), it->n2())) == blackEdges.end())&&
-                    (blackEdges.find(pair(it->n2(), it->n1()))==blackEdges.end()))&&(toErase.find(it->n2())!=toErase.end()))
-                        erasedComponents.insert(comp);
-
-    erasedComponents.insert(toErase);
-    auto isErased = [&](std::set<Number> conC){return erasedComponents.count(conC)>0;};
-
-    for(auto it=connectedComponents.begin(); it!=connectedComponents.end(); it++)
-        if (isErased(*it))
-            it = connectedComponents.erase(it);
-
-//    std::remove_if(connectedComponents.begin(), connectedComponents.end(), isErased);
-//    for (auto &comp: erasedComponents)
-//        connectedComponents.erase(remove(connectedComponents.begin(), connectedComponents.end(), comp));
-//    connectedComponents.erase(find(connectedComponents.begin(), connectedComponents.end(), toErase));
+                    (blackEdges.find(pair(it->n2(), it->n1()))==blackEdges.end()))&&(toErase.find(it->n2())!=toErase.end())
+                    &&(!isRemoved[it->n2()]))
+                        for (auto &m: comp)
+                            isRemoved[m] = true;
 }
 
 /*
  * vyhadzujeme large thick sety aj s malymi setmi cervenou hranou s nimi spojenymi
  */
-void step2(Graph &g, set<pair<Number, Number>> blackEdges, float epsilon, set<set<Number>> &connectedComponents){
+void step2(Graph &g, set<pair<Number, Number>> blackEdges, float epsilon, set<set<Number>> &connectedComponents,
+           map<Number, bool> &isRemoved){
     //z rodiny komponentov budeme vyhadzovat prvky pokym tam budu, pricom vyhadzoavnim sa mozu zmenit tenke mnoziny
     // na hrube a naopak, preto prehladavanie ukoncime az ked od posledneho najdenia neprejdeme vsetky prvky
 
@@ -365,7 +359,7 @@ void step2(Graph &g, set<pair<Number, Number>> blackEdges, float epsilon, set<se
                 //po kazdej iteracii aktualizujem IK, nech IK==G
 
                 //zavolam funkciu eraseLargeThickComp ktora okrem neho vyhodi aj vsetky male susedne cez cervenu hranu
-                eraseLargeThickComp(g, blackEdges, epsilon, connectedComponents, comp);
+                eraseLargeThickComp(g, blackEdges, epsilon, connectedComponents, comp, isRemoved);
                 vyhodiliSme = true;
             }
         }
@@ -407,74 +401,111 @@ int n(Number vertex, map<pair<Number, Number>, set<Number>> &extraEdges, Graph &
 }
 
 //create reference between deleted tree in step 1 a 2 of reducing and the edge which represents it
-map<pair<Number, Number>, set<Number>> edgeRef(Graph &graph, bool (&isRemoved)[], set<pair<Number, Number>> blackEdges){
+map<pair<Number, Number>, set<Number>> edgeRef(Graph &graph, map<Number, bool> &isRemoved,
+        set<pair<Number, Number>> blackEdges){
     map<pair<Number, Number>, set<Number>> er;
     set<set<Number>> components = connectedComponents(graph);
     //int edgeCounter = 0;
+    map<Number, bool> isNotRemoved;
+    for (int i = 0; i<graph.order(); i++)
+        isNotRemoved[i] = !isRemoved[i];
+
     for (auto &comp: components){
+//        set<Number> toDelete; //mnozina vrcholov ktore z comp odstranim
+//        for (auto &n: comp)
+//            if (!isRemoved[n.to_int()]) //take vrcholy ktore sme neoznacili ako vymazane teraz vymazeme
+//                toDelete.insert(n);
+
+        //kernelOfComponent is set of vertices which were not reduced
+        set<Number> kernelOfComponent = connectedComponents(graph, comp, isRemoved).begin().operator*();
 
 
-        set<Number> toDelete; //mnozina vrcholov ktore z comp odstranim
-        for (auto &n: comp)
-            if (!isRemoved[n.to_int()]) //take vrcholy ktore sme neoznacili ako vymazane teraz vymazeme
-                toDelete.insert(n);
-
-        set<set<Number>> reducedComponents = connectedComponents(graph, comp, isRemoved);
-        for (auto &rc: reducedComponents){
-            vector<Number> vertices;
-            //kazdy komponent bude predstavovany jednou hranou - z vrchola v1 do v2(moze to byt aj ten isty vrchol)
-            set<Number> allVerticesInComponent; //komponent budu tvorit len vrcholy
-            for (auto &n: rc) {
-                for (auto &inc: graph[n])
-                    if (((blackEdges.find(pair(inc.n1(), inc.n2()))!=blackEdges.end())||
-                    (blackEdges.find(pair(inc.n2(), inc.n1())) != blackEdges.end())) && (!isRemoved[inc.n2().to_int()]))
-                        vertices.push_back(inc.n2());
-                allVerticesInComponent.insert(n);
+        if (!kernelOfComponent.empty()){
+            set<set<Number>> reducedTreesOfComponent = connectedComponents(graph, comp, isNotRemoved);
+            //TODO: is this working properly?!?!?!?!??!?!?!?!?!??!?!?!!?!!??!?!?!??!?!?!?!??!?!?!?!?
+            for (auto &rtc: reducedTreesOfComponent){
+                vector<Number> vertices;
+                //kazdy komponent bude predstavovany jednou hranou - z vrchola v1 do v2(moze to byt aj ten isty vrchol)
+                set<Number> allVerticesInComponent; //komponent budu tvorit len vrcholy
+                for (auto &n: rtc){
+                    for (auto &inc: graph[n])
+                        if (((blackEdges.find(pair(inc.n1(), inc.n2()))!=blackEdges.end())||
+                             (blackEdges.find(pair(inc.n2(), inc.n1())) != blackEdges.end())) &&
+                             (kernelOfComponent.find(inc.n2())!=kernelOfComponent.end()))
+                            vertices.push_back(inc.n2());
+                    allVerticesInComponent.insert(n);
+                }
+                er.insert(make_pair(make_pair(vertices[0], vertices[1]), allVerticesInComponent));
             }
-            er.insert(make_pair(make_pair(vertices[0], vertices[1]), allVerticesInComponent));
+
+//            for (auto &n: rc) {
+//                for (auto &inc: graph[n])
+//                    if (((blackEdges.find(pair(inc.n1(), inc.n2()))!=blackEdges.end())||
+//                    (blackEdges.find(pair(inc.n2(), inc.n1())) != blackEdges.end())) && (!isRemoved[inc.n2()]))
+//                        vertices.push_back(inc.n2());
+//                allVerticesInComponent.insert(n);
+//            }
+//            er.insert(make_pair(make_pair(vertices[0], vertices[1]), allVerticesInComponent));
             //chcel by som na "vymazane" grafy odkazovat cez hranu, nie dvojicu vrcholov
         }
     }
     return er;
 }
 
-void removeLine(Graph &g, set<Number> &graphToReduce, bool (&isRemoved)[], const Number n){
-    if (!isRemoved[n.to_int()]){
-        int removedNeighbors = 0;
-        for (auto &inc: g[n])
-            if (isRemoved[inc.n2().to_int()])
-                removedNeighbors++;
-        if (g[n].neighbours().size() - removedNeighbors == 1) {
-            isRemoved[n.to_int()] = true;
+void removeLine(Graph &g, set<Number> &graphToReduce, map<Number, bool> &isRemoved,
+        const Number n, set<pair<Number, Number>> &blackEdges){
+    if (!isRemoved[n]){
+        int removedNeighbors = 0, numOfBlackEdges = 0;
+        for (auto &inc: g[n]) {
+            if ((blackEdges.find(pair(inc.n1(), inc.n2()))!=blackEdges.end())||
+                    (blackEdges.find(pair(inc.n2(), inc.n1()))!=blackEdges.end())) {
+                numOfBlackEdges++;
+                if (isRemoved[inc.n2()])
+                    removedNeighbors++;
+            }
+        }
+        //set as removed only if it has 1 or no neighbor
+        if (numOfBlackEdges - removedNeighbors < 2) {
+            isRemoved[n] = true;
             for (auto &inc: g[n])
-                if (graphToReduce.find(g[n].n())!=graphToReduce.end())
-                    removeLine(g, graphToReduce, isRemoved, inc.n2());
+                if ((blackEdges.find(pair(inc.n1(), inc.n2()))!=blackEdges.end())||
+                        (blackEdges.find(pair(inc.n2(), inc.n1()))!=blackEdges.end()))
+                    if (graphToReduce.find(inc.n2())!=graphToReduce.end())
+                        removeLine(g, graphToReduce, isRemoved, inc.n2(), blackEdges);
         }
     }
 }
 
 //vyhodime vsetky vrcholy stupna 1 v ciernych komponentoch az ziaden taky nezostane
-void reduceStep1(Graph &g, set<Number> graphToReduce, bool (&isRemoved)[]){
+void reduceStep1(Graph &g, set<Number> graphToReduce, map<Number, bool> &isRemoved,
+        set<pair<Number, Number>> &blackEdges){
     for (auto &n: graphToReduce){
-        removeLine(g, graphToReduce, isRemoved, n);
+        removeLine(g, graphToReduce, isRemoved, n, blackEdges);
     }
 }
 
 //v komponente zo zvysnych vrcholov nechame iba vrcholy stupna 3,
 //cesty edzi nimi nahradime jednou hranou (vo funkcii edgeRef)
-void reduceStep2(Graph &g, set<Number> graphToReduce,  bool (&isRemoved)[]) {
+void reduceStep2(Graph &g, set<Number> graphToReduce,  map<Number, bool> &isRemoved,
+        set<pair<Number, Number>> &blackEdges) {
     bool toRemove[g.order()];
+    for (auto &a: toRemove)
+        a = false;
     for (auto &n: graphToReduce) {
-        int removedNeighbors = 0;
+        int removedNeighbors = 0, numOfBlackEdges = 0;
         for (auto &inc: g[n])
-            if (isRemoved[inc.n2().to_int()])
-                removedNeighbors++;
-        if (g[n].neighbours().size() - removedNeighbors < 3) // == 2
+            if ((blackEdges.find(pair(inc.n1(), inc.n2()))!=blackEdges.end())||
+                    (blackEdges.find(pair(inc.n2(), inc.n1()))!=blackEdges.end())) {
+                numOfBlackEdges++;
+                if (isRemoved[inc.n2()])
+                    removedNeighbors++;
+            }
+        if (numOfBlackEdges - removedNeighbors < 3) // == 2
             toRemove[n.to_int()] = true;
     }
     //najprv som si vymazanie dvojkovych zaznacil, az potom naraz som ich vymazal,
     //lebo inak by som vymazal prakticky vsetky vrhcoly
-    for (auto &a:toRemove){
+    for (int a = 0; a<g.order(); a++){
         if (toRemove[a]){
             isRemoved[a] = true;
         }
@@ -542,23 +573,17 @@ set<node*> getDesignatedNodes(node* root, set<node*> &nodes){
 }
 
 //function creates reducedGraph from graph - reduceStep1 and reduceStep2
-set<Number> reducedGraph(Graph &graph, set<pair<Number, Number>> &blackEdges, float epsilon, bool (&isRemoved)[]){
-    Factory f;
-    Graph blackComponents(createG(f));
-    for (int i = 0; i<graph.order(); i++)
-        addV(blackComponents, i, f);
-    for(auto &e: blackEdges)
-        addE(blackComponents, Loc(e.first, e.second), f);
-    set<set<Number>> components = connectedComponents(blackComponents);
-    for (auto &comp: components){
-        reduceStep1(graph, comp, isRemoved);
-        reduceStep2(graph, comp, isRemoved);
+set<Number> reducedGraph(Graph &graph, set<pair<Number, Number>> &blackEdges, float epsilon, map<Number, bool> &isRemoved,
+        set<set<Number>> blackComponents, Graph &blackGraph, Factory &f){
+    for (auto &comp: blackComponents){
+        reduceStep1(graph, comp, isRemoved, blackEdges);
+        reduceStep2(graph, comp, isRemoved, blackEdges);
     }
-    map<pair<Number, Number>, set<Number>> extraEdges = edgeRef(blackComponents, isRemoved, blackEdges);
+    map<pair<Number, Number>, set<Number>> extraEdges = edgeRef(blackGraph, isRemoved, blackEdges);
 
     Graph rg(createG(f)); //create reduced graph rg
     for (auto &rot: graph) // add all remaining (not removed) vertices in graph to rg
-        if (!isRemoved[rot.n().to_int()]) {
+        if (!isRemoved[rot.n()]) {
             addV(rg, rot.n());
             for (auto &inc: rot) //add black edges between added vertices to rg
                 if ((blackEdges.find(pair(inc.n1(), inc.n2()))!=blackEdges.end())||
@@ -571,20 +596,20 @@ set<Number> reducedGraph(Graph &graph, set<pair<Number, Number>> &blackEdges, fl
     }
     set<Number> result;
     for (auto &rot: rg){
-        if (n(rot.n(), extraEdges, graph, blackEdges, epsilon, components)==4){
+        if (n(rot.n(), extraEdges, graph, blackEdges, epsilon, blackComponents)==4){
             result.insert(rot.n());
             for (auto &inc: rot)
-                if (!isFat(extraEdges, pair(inc.n1(), inc.n2()), graph, blackEdges, epsilon, components))
+                if (!isFat(extraEdges, pair(inc.n1(), inc.n2()), graph, blackEdges, epsilon, blackComponents))
                     for (auto &n:extraEdges.at(pair(inc.n1(), inc.n2())))
                         result.insert(n);
 
-            set<Number> zjednotenie = smallSetsViaRedEdge(result, graph, blackEdges, epsilon, components, false);
+            set<Number> zjednotenie = smallSetsViaRedEdge(result, graph, blackEdges, epsilon, blackComponents, false);
             for (auto &z: zjednotenie)
                 if (result.find(z)==result.end())
                     result.insert(z);
             return result;
         }
-        if (n(rot.n(), extraEdges, graph, blackEdges, epsilon, components)>4){
+        if (n(rot.n(), extraEdges, graph, blackEdges, epsilon, blackComponents)>4){
             int numOfAlfa2Edges = 0;
             set<set<Number>> treesOfAlfa2Edges;
             for (auto &inc: rot) {
@@ -593,8 +618,8 @@ set<Number> reducedGraph(Graph &graph, set<pair<Number, Number>> &blackEdges, fl
                     vertices = extraEdges.at(pair(inc.n1(), inc.n2()));
                 if (extraEdges.find(pair(inc.n2(), inc.n1())) != extraEdges.end())
                     vertices = extraEdges.at(pair(inc.n2(), inc.n1()));
-                if ((!isFat(extraEdges, pair(inc.n1(), inc.n2()), graph, blackEdges, epsilon, components))
-                    && (alfa(vertices, graph, blackEdges, epsilon, components)==2)) {
+                if ((!isFat(extraEdges, pair(inc.n1(), inc.n2()), graph, blackEdges, epsilon, blackComponents))
+                    && (alfa(vertices, graph, blackEdges, epsilon, blackComponents)==2)) {
                     numOfAlfa2Edges++; //podmienka na to aby result splnal lemu
                     treesOfAlfa2Edges.insert(vertices);
                 }
@@ -624,8 +649,8 @@ set<Number> reducedGraph(Graph &graph, set<pair<Number, Number>> &blackEdges, fl
                 v2 = inc.n1();
             }
 
-            if ((!isFat(extraEdges, pair(inc.n1(), inc.n2()), graph, blackEdges, epsilon, components))&&
-            (alfa(vertices, graph, blackEdges, epsilon, components)>=3)){
+            if ((!isFat(extraEdges, pair(inc.n1(), inc.n2()), graph, blackEdges, epsilon, blackComponents))&&
+            (alfa(vertices, graph, blackEdges, epsilon, blackComponents)>=3)){
                 //oznacime 2 vrcholy spojene cez externe cierne hrany
                 //TODO: K is a tree - pokial 2 externe hrany odkazuju na 1 vrchol tak nie
                 set<Number> k;
@@ -638,7 +663,7 @@ set<Number> reducedGraph(Graph &graph, set<pair<Number, Number>> &blackEdges, fl
 
                 createSubtree(graph, root, k, blackEdges);
 
-                designateNodes(graph, root, blackEdges, epsilon, components, v1, v2);
+                designateNodes(graph, root, blackEdges, epsilon, blackComponents, v1, v2);
 
                 set<node*> nodes;
 
@@ -646,8 +671,8 @@ set<Number> reducedGraph(Graph &graph, set<pair<Number, Number>> &blackEdges, fl
 
                 for (auto &nd: nodes){
                     set<Number> subtreeVertices = getSubtreeVertices(graph, nd, subtreeVertices);
-                    if (s(subtreeVertices, graph, blackEdges, epsilon, components)<=20/(epsilon/(1+2*epsilon)))
-                        return smallSetsViaRedEdge(subtreeVertices, graph, blackEdges, epsilon, components, false);
+                    if (s(subtreeVertices, graph, blackEdges, epsilon, blackComponents)<=20/(epsilon/(1+2*epsilon)))
+                        return smallSetsViaRedEdge(subtreeVertices, graph, blackEdges, epsilon, blackComponents, false);
                 }
 
             }
@@ -662,7 +687,7 @@ set<Number> reducedGraph(Graph &graph, set<pair<Number, Number>> &blackEdges, fl
 * a zaroven nech je cervenych hran viac ako ciernych.
 * Najdeme mnozinu urcitej/obmedzenej velkosti taku, ze cervenych interncyh hran je viac ako ciernych externych
 */
-set<Number> redBlackEdges(Graph &g, set<pair<Number, Number>> &blackEdges, float epsilon, Graph &ciernyGraf) {
+set<Number> redBlackEdges(Graph &g, set<pair<Number, Number>> &blackEdges, float epsilon, Graph &ciernyGraf, Factory &f) {
 
     set<set<Number>> rodinaCiernychKomponentov = connectedComponents(ciernyGraf);
 
@@ -670,20 +695,25 @@ set<Number> redBlackEdges(Graph &g, set<pair<Number, Number>> &blackEdges, float
     //mnozina s nejakymi vlastnostami a nasledne najdeme mnozinu splnajucu lemu
 
     //some simple cases such that small positive set or 2 (or more) small sets connected via a red edge
-    for (auto &comp: rodinaCiernychKomponentov){
-        if (isPositive(comp, g, blackEdges))
-            return comp;
-        else if (isPositive(smallSetsViaRedEdge(comp, g, blackEdges, epsilon, rodinaCiernychKomponentov, true), g, blackEdges))
-            return smallSetsViaRedEdge(comp, g, blackEdges, epsilon, rodinaCiernychKomponentov, true);
-    }
+//    for (auto &comp: rodinaCiernychKomponentov){
+//        if (isPositive(comp, g, blackEdges))
+//            return comp;
+//        else if (isPositive(smallSetsViaRedEdge(comp, g, blackEdges, epsilon, rodinaCiernychKomponentov, true), g, blackEdges))
+//            return smallSetsViaRedEdge(comp, g, blackEdges, epsilon, rodinaCiernychKomponentov, true);
+//    }
 
-    step1(g, blackEdges, epsilon, rodinaCiernychKomponentov);
 
-    step2(g, blackEdges, epsilon, rodinaCiernychKomponentov);
+    map<Number, bool> isRemoved;
+    for (int i = 0; i<g.order(); i++)
+        isRemoved[i] = false;
 
-    bool (isRemoved[g.order()]);
+    //step1(g, blackEdges, epsilon, rodinaCiernychKomponentov, isRemoved);
+
+    step2(g, blackEdges, epsilon, rodinaCiernychKomponentov, isRemoved);
 
     //cast was offered by CLion, without casting no building was able
-    return reducedGraph(g, blackEdges, epsilon, reinterpret_cast<bool (&)[]>(isRemoved));
+    //TODO: add as parameter also rodinaCiernychKomponentov?
+    return reducedGraph(g, blackEdges, epsilon, isRemoved,
+            rodinaCiernychKomponentov, ciernyGraf, f);
 
 }
