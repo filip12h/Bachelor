@@ -124,7 +124,7 @@ int main() {
     cout<<g<<"\n";
 
 
-    set<Number> ourSet = redBlackEdges(g, blackEdges, epsilon, blackGraph);
+    set<Number> ourSet = redBlackEdges(g, blackEdges, epsilon, blackGraph, f);
 
     cout<<ourSet;
 
