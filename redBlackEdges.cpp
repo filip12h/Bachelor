@@ -188,7 +188,7 @@ bool isLarge(set<Number> vertices, Graph &g, set<pair<Number, Number>> blackEdge
 //optional TODO: opakujuci sa kod vo funkciach alfa() a s() a smallSetsViaRedEdge()
 
 //pocet cervenych hran medzi mnozinou vertices a malymi mnozinami
-int alfa(set<Number> &vertices, Graph &g, set<pair<Number, Number>> blackEdges,
+int alfa(set<Number> vertices, Graph &g, set<pair<Number, Number>> blackEdges,
         float epsilon, set<set<Number>> &connectedComponents){
     int result = 0;
     for (auto &comp: connectedComponents)
@@ -313,12 +313,6 @@ void step1(Graph &g, set<pair<Number, Number>> blackEdges, float epsilon, set<se
                     isRemoved[n] = true;
         }
     }
-//
-//    auto isErased = [&](std::set<Number> conC){return erasedComponents.count(conC)>0;};
-//
-//    for(auto it=connectedComponents.begin(); it!=connectedComponents.end(); it++)
-//        if (isErased(*it))
-//            it = connectedComponents.erase(it);
 }
 
 //funkcia vyhodi komponent toErase a aj vsetky male komponenty s nim spojene cervenou hranou
@@ -411,10 +405,6 @@ map<pair<Number, Number>, set<Number>> edgeRef(Graph &graph, map<Number, bool> &
         isNotRemoved[i] = !isRemoved[i];
 
     for (auto &comp: components){
-//        set<Number> toDelete; //mnozina vrcholov ktore z comp odstranim
-//        for (auto &n: comp)
-//            if (!isRemoved[n.to_int()]) //take vrcholy ktore sme neoznacili ako vymazane teraz vymazeme
-//                toDelete.insert(n);
 
         //kernelOfComponent is set of vertices which were not reduced
         set<Number> kernelOfComponent = connectedComponents(graph, comp, isRemoved).begin().operator*();
@@ -442,16 +432,6 @@ map<pair<Number, Number>, set<Number>> edgeRef(Graph &graph, map<Number, bool> &
                 }
                 er.insert(make_pair(make_pair(vertices[0], vertices[1]), rtc));
             }
-
-//            for (auto &n: rc) {
-//                for (auto &inc: graph[n])
-//                    if (((blackEdges.find(pair(inc.n1(), inc.n2()))!=blackEdges.end())||
-//                    (blackEdges.find(pair(inc.n2(), inc.n1())) != blackEdges.end())) && (!isRemoved[inc.n2()]))
-//                        vertices.push_back(inc.n2());
-//                allVerticesInComponent.insert(n);
-//            }
-//            er.insert(make_pair(make_pair(vertices[0], vertices[1]), allVerticesInComponent));
-            //chcel by som na "vymazane" grafy odkazovat cez hranu, nie dvojicu vrcholov
         }
     }
     return er;
@@ -534,10 +514,10 @@ node* createSubtree(Graph &graph, node* &root, set<Number> &vertices, set<pair<N
     return root;
 }
 
-set<Number> getSubtreeVertices(Graph &graph, node* root, set<Number> &subtreeVertices){
+set<Number> getSubtreeVertices(node* root, set<Number> &subtreeVertices){
     subtreeVertices.insert(root->vertex);
-    if (root->left!=NULL) getSubtreeVertices(graph, root->left, subtreeVertices);
-    if (root->right!=NULL) getSubtreeVertices(graph, root->right, subtreeVertices);
+    if (root->left!=NULL) getSubtreeVertices(root->left, subtreeVertices);
+    if (root->right!=NULL) getSubtreeVertices(root->right, subtreeVertices);
     return subtreeVertices;
 }
 
@@ -554,10 +534,10 @@ void undesignateNodesAbove(node* root){
     }
 }
 
-void designateNodes(Graph &graph, node* root, set<pair<Number, Number>> blackEdges,
+void designateNodes(Graph &graph, node* root, set<pair<Number, Number>> &blackEdges,
         float epsilon, set<set<Number>> components, Number marked1, Number marked2){
     if ((!isNodeInSubtree(graph, root, marked1))&&(!isNodeInSubtree(graph, root, marked2))) {
-        set<Number> subtreeVertices = getSubtreeVertices(graph, root, subtreeVertices);
+        set<Number> subtreeVertices = getSubtreeVertices(root, subtreeVertices);
         if (alfa(subtreeVertices, graph, blackEdges, epsilon, components) == 2) {
             root->isDesignated = true;
             undesignateNodesAbove(root);
@@ -575,6 +555,131 @@ set<node*> getDesignatedNodes(node* root, set<node*> &nodes){
     if (root->left!=NULL) getDesignatedNodes(root->left, nodes);
     if (root->right!=NULL) getDesignatedNodes(root->right, nodes);
     return nodes;
+}
+
+void insertParents(set<Number> &graphOfDesignatedVertices, node* currentNode){
+    if (graphOfDesignatedVertices.find(currentNode->vertex)==graphOfDesignatedVertices.end())
+        graphOfDesignatedVertices.insert(currentNode->vertex);
+    if (currentNode->parent!=NULL)
+        insertParents(graphOfDesignatedVertices, currentNode->parent);
+}
+
+set<Number> pathsAmongDesignatedVertices(set<node*> &nodes){
+    set<Number> result;
+    for (auto &n: nodes)
+        insertParents(result, n);
+    return result;
+}
+
+void pathOfChildren(node* currentNode, set<Number> &path){
+    if ((currentNode->left!=NULL)&&(currentNode->right==NULL)){
+        path.insert(currentNode->vertex);
+        pathOfChildren(currentNode->left, path);
+    } else if ((currentNode->left==NULL)&&(currentNode->right!=NULL)){
+        path.insert(currentNode->vertex);
+        pathOfChildren(currentNode->right, path);
+    }
+}
+
+void getPath(node* currentNode, set<Number> &path, set<Number> &vertices, set<set<Number>> &setOfPaths){
+    if (currentNode->parent!=NULL) {
+        //I search for nodes with 1 child
+        if ((vertices.find(currentNode->parent->left->vertex) == vertices.end()) ||
+            (vertices.find(currentNode->parent->right->vertex) == vertices.end())) {
+            path.insert(currentNode->parent->vertex);
+            getPath(currentNode->parent, path, vertices, setOfPaths);
+        } else { //if node has 2 childs, add path to setOfPaths and search for new path
+            setOfPaths.insert(path);
+            set<Number> newPath;
+            getPath(currentNode->parent, newPath, vertices, setOfPaths);
+        }
+    } else {
+        set<Number> newPath;
+        newPath.insert(currentNode->vertex);
+        pathOfChildren(currentNode, newPath);
+        setOfPaths.insert(newPath);
+    }
+}
+
+set<set<Number>> getAllPaths(set<Number> &vertices, set<node*> &nodes){ //these nodes are designated
+    set<set<Number>> setOfPaths;
+
+    for (auto &n: nodes) {
+        set<Number> path;
+        getPath(n, path, vertices, setOfPaths);
+    }
+
+    return setOfPaths;
+}
+
+set<node*> getAllChildren(node* root, set<node*> children){
+    children.insert(root);
+    if (root->left!=NULL) getAllChildren(root->left, children);
+    if (root->right!=NULL) getAllChildren(root->right, children);
+}
+
+set<Number> u(Number vertex, set<node*> &allNodes, set<Number> &graphOfDesignatedVertices){
+    set<Number> result;
+    for (auto &n: allNodes){
+        if (n->vertex!=vertex){
+            set<Number> vert;
+            //I search only among children because all vertices above designated vertex are also designated
+            if (graphOfDesignatedVertices.find(n->left->vertex)==graphOfDesignatedVertices.end()){
+                vert = getSubtreeVertices(n->left, vert);
+            }
+            if (graphOfDesignatedVertices.find(n->right->vertex)==graphOfDesignatedVertices.end()){
+                vert = getSubtreeVertices(n->right, vert);
+            }
+            for (auto &v: vert) result.insert(v);
+            result.insert(n->vertex);
+        }
+    }
+
+    return result;
+}
+
+set<Number> u(set<Number> path, set<node*> &allNodes, set<Number> &graphOfDesignatedVertices){
+    set<Number> result;
+    for (auto &n: allNodes){
+        if (path.find(n->vertex)!=path.end()){
+            set<Number> vert;
+            //I search only among children because all vertices above designated vertex are also designated
+            if (graphOfDesignatedVertices.find(n->left->vertex)==graphOfDesignatedVertices.end()){
+                vert = getSubtreeVertices(n->left, vert);
+            }
+            if (graphOfDesignatedVertices.find(n->right->vertex)==graphOfDesignatedVertices.end()){
+                vert = getSubtreeVertices(n->right, vert);
+            }
+            for (auto &v: vert) result.insert(v);
+            result.insert(n->vertex);
+        }
+    }
+
+    return result;
+}
+
+bool isPathPlus(set<Number> path, set<node*> &allNodes, set<Number> graphOfDesignatedVertices,
+        Graph &blackGraph, set<pair<Number, Number>> &blackEdges, float epsilon, set<set<Number>> &connectedComponents){
+    set<Number> vertices = u(path, allNodes, graphOfDesignatedVertices);
+    return ((4/((epsilon/(2*epsilon+1))))*alfa(vertices, blackGraph, blackEdges, epsilon, connectedComponents))>=
+    s(vertices, blackGraph, blackEdges, epsilon, connectedComponents);
+}
+
+//set of paths "plus" incident to vertex
+set<set<Number>> p(Number &vertex, set<Number> &vertices, set<set<Number>> &setOfPaths, set<node*> &allNodes,
+        set<Number> &graphOfDesignatedVertices, Graph &blackGraph, set<pair<Number, Number>> &blackEdges, float epsilon,
+        set<set<Number>> &connectedComponents){
+    set<set<Number>> result;
+    //postupne sa pozeraj na susedov vrchola a hladaj ich v setOfPaths, ked najdes a zistis ze je "plus", pridaj ju
+    if (blackGraph[vertex].neighbours().size()==3){
+        for (auto &inc: blackGraph[vertex])
+            for (auto &path: setOfPaths)
+                if (path.find(inc.n2())!=path.end())
+                    if (isPathPlus(path, allNodes, graphOfDesignatedVertices, blackGraph, blackEdges, epsilon, connectedComponents))
+                        result.insert(path);
+        }
+    return result;
+
 }
 
 //function creates reducedGraph from graph - reduceStep1 and reduceStep2
@@ -672,7 +777,10 @@ set<Number> reducedGraph(Graph &graph, set<pair<Number, Number>> &blackEdges, fl
 
                 struct node* root = createNode(v1);
 
-                createSubtree(graph, root, k, blackEdges);
+                root = createSubtree(graph, root, k, blackEdges);
+
+                set<node*> allNodes;
+                allNodes = getAllChildren(root, allNodes);
 
                 designateNodes(graph, root, blackEdges, epsilon, blackComponents, v1, v2);
 
@@ -681,11 +789,104 @@ set<Number> reducedGraph(Graph &graph, set<pair<Number, Number>> &blackEdges, fl
                 nodes = getDesignatedNodes(root, nodes);
 
                 for (auto &nd: nodes){
-                    set<Number> subtreeVertices = getSubtreeVertices(graph, nd, subtreeVertices);
+                    set<Number> subtreeVertices = getSubtreeVertices(nd, subtreeVertices);
                     if (s(subtreeVertices, graph, blackEdges, epsilon, blackComponents)<=20/(epsilon/(1+2*epsilon)))
                         return smallSetsViaRedEdge(subtreeVertices, graph, blackEdges, epsilon, blackComponents, false);
                 }
 
+                set<Number> graphOfDesignatedVertices = pathsAmongDesignatedVertices(nodes);
+
+                set<set<Number>> allPaths = getAllPaths(graphOfDesignatedVertices, nodes);
+
+                for (auto n: vertices){
+                    set<set<Number>> incidentPaths = p(n, vertices, allPaths, allNodes, graphOfDesignatedVertices,
+                            blackGraph, blackEdges, epsilon, blackComponents);
+                    int sumOfAlfa = 0;
+                    for (auto &ip: incidentPaths)
+                        sumOfAlfa += alfa(ip, graph, blackEdges, epsilon, blackComponents);
+
+                    if (sumOfAlfa==4){
+                        set<Number> myUnion;
+                        for (auto ip: incidentPaths)
+                            for (auto i: u(ip, allNodes, graphOfDesignatedVertices))
+                                myUnion.insert(i);
+                        myUnion.insert(n);
+                        return smallSetsViaRedEdge(myUnion, graph, blackEdges, epsilon, blackComponents, false);
+                    } else if ((sumOfAlfa>4)&&(incidentPaths.size()==2)){
+                        set<Number> myUnion;
+                        int numOfAlfa2Paths = 0;
+                        for (auto ip: incidentPaths) {
+                            if (alfa(ip, graph, blackEdges, epsilon, blackComponents) != 2) {
+                                numOfAlfa2Paths++;
+                                for (auto i: u(ip, allNodes, graphOfDesignatedVertices))
+                                    myUnion.insert(i);
+                            }
+                        }
+                        if (numOfAlfa2Paths==2) {
+                            myUnion.insert(n);
+                            return smallSetsViaRedEdge(myUnion, graph, blackEdges, epsilon, blackComponents, false);
+                        }
+                        for (auto ip: incidentPaths){
+                            if (alfa(u(ip, allNodes, graphOfDesignatedVertices), graph, blackEdges, epsilon,
+                                    blackComponents)>2){
+                                bool conditionFulfilled = true;
+                                for (auto i: ip)
+                                    //just controlling what is in lemma
+                                    if (alfa(u(i, allNodes, graphOfDesignatedVertices), graph, blackEdges,
+                                            epsilon, blackComponents)>1){
+                                        conditionFulfilled = false;
+                                    }
+                                if (conditionFulfilled){
+                                    //distinguish between 2 cases
+                                    if (alfa(u(ip, allNodes, graphOfDesignatedVertices), graph, blackEdges, epsilon,
+                                             blackComponents)<5){
+                                        set<Number> myUnion2;
+                                        for (auto &i: ip)
+                                            for (auto &toAdd: u(i, allNodes, graphOfDesignatedVertices))
+                                                myUnion2.insert(toAdd);
+                                        return smallSetsViaRedEdge(myUnion2, graph, blackEdges, epsilon, blackComponents, false);
+                                    } else {
+                                        //find a sequence of 3 vertices on path "ip" such that these vertices' trees are
+                                        //connected to small set via red edge. Union of this sequence, paths between them
+                                        //and their trees has to be as low as possible
+
+                                        //TODO: I am not sure if vertices in "ip" are sorted as they are connected
+                                        set<Number> alfaVertices;
+                                        set<set<Number>> pathsBetweenAlfaVertices;
+                                        Number first, second, third;
+                                        set<Number> path;
+                                        for (auto &i: ip){
+                                            if (alfa(u(i, allNodes, graphOfDesignatedVertices), graph, blackEdges,
+                                                    epsilon, blackComponents)==1) {
+                                                alfaVertices.insert(i);
+                                                if (alfaVertices.size()>1) //we do not add path before 1st vetrtex
+                                                    pathsBetweenAlfaVertices.insert(path);
+                                                path.clear();
+                                            } else path.insert(i);
+                                        }
+                                        set<Number> finiteUnion, myUnion3;
+                                        int numOfAlfaVertices = 0, minSizeOfUnion = INT8_MAX;
+                                        for (int av = 0; av<alfaVertices.size()-2; av++){
+                                            for (auto &i: u(next(alfaVertices.begin(), av).operator*(), allNodes,
+                                                    graphOfDesignatedVertices))
+                                                myUnion3.insert(i);
+                                            for (auto &i: u(next(pathsBetweenAlfaVertices.begin(), av).operator*(),
+                                                    allNodes, graphOfDesignatedVertices))
+                                                myUnion3.insert(i);
+                                            if (myUnion3.size()<minSizeOfUnion){
+                                                minSizeOfUnion = myUnion3.size();
+                                                myUnion3.clear();
+                                                finiteUnion = myUnion3;
+                                            }
+                                        }
+                                        return finiteUnion;
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -706,19 +907,19 @@ set<Number> redBlackEdges(Graph &g, set<pair<Number, Number>> &blackEdges, float
     //mnozina s nejakymi vlastnostami a nasledne najdeme mnozinu splnajucu lemu
 
     //some simple cases such that small positive set or 2 (or more) small sets connected via a red edge
-//    for (auto &comp: rodinaCiernychKomponentov){
-//        if (isPositive(comp, g, blackEdges))
-//            return comp;
-//        else if (isPositive(smallSetsViaRedEdge(comp, g, blackEdges, epsilon, rodinaCiernychKomponentov, true), g, blackEdges))
-//            return smallSetsViaRedEdge(comp, g, blackEdges, epsilon, rodinaCiernychKomponentov, true);
-//    }
+    for (auto &comp: rodinaCiernychKomponentov){
+        if (isPositive(comp, g, blackEdges))
+            return comp;
+        else if (isPositive(smallSetsViaRedEdge(comp, g, blackEdges, epsilon, rodinaCiernychKomponentov, true), g, blackEdges))
+            return smallSetsViaRedEdge(comp, g, blackEdges, epsilon, rodinaCiernychKomponentov, true);
+    }
 
 
     map<Number, bool> isRemoved;
     for (int i = 0; i<g.order(); i++)
         isRemoved[i] = false;
 
-    //step1(g, blackEdges, epsilon, rodinaCiernychKomponentov, isRemoved);
+    step1(g, blackEdges, epsilon, rodinaCiernychKomponentov, isRemoved);
 
     step2(g, blackEdges, epsilon, rodinaCiernychKomponentov, isRemoved);
 
