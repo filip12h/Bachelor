@@ -5,7 +5,6 @@
 #include "redBlackEdges.h"
 #include <iostream>
 
-
 using namespace ba_graph;
 using namespace std;
 
@@ -21,8 +20,8 @@ struct node
 
 //unique_ptr
 
-struct node* createNode(Number vertex){
-    struct node* newNode = (struct node*)malloc(sizeof(struct node));
+node* createNode(Number vertex){
+    auto* newNode = (struct node*)malloc(sizeof(struct node));
     newNode->vertex = vertex;
     newNode->left = NULL;
     newNode->right = NULL;
@@ -34,13 +33,13 @@ struct node* createNode(Number vertex){
 
 //funkcia na vratenie pamate free()
 
-struct node* insertLeft(struct node *root, Number vertex) {
+node* insertLeft(struct node *root, Number vertex) {
     root->left = createNode(vertex);
     root->left->parent = root;
     return root->left;
 }
 
-struct node* insertRight(struct node *root, Number vertex){
+node* insertRight(struct node *root, Number vertex){
     root->right = createNode(vertex);
     root->right->parent = root;
     return root->right;
@@ -616,6 +615,7 @@ set<node*> getAllChildren(node* root, set<node*> children){
     children.insert(root);
     if (root->left!=NULL) getAllChildren(root->left, children);
     if (root->right!=NULL) getAllChildren(root->right, children);
+    return children;
 }
 
 set<Number> u(Number vertex, set<node*> &allNodes, set<Number> &graphOfDesignatedVertices){

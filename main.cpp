@@ -3,7 +3,7 @@
 #include "basic_impl.hpp"
 #include "io/print_nice.hpp"
 #include <invariants.hpp>
-#include "redBlackEdges.cpp"
+#include "oneHelpfulSet.cpp"
 
 
 using namespace ba_graph;
@@ -118,15 +118,57 @@ int main() {
 
     assert((g.size()-blackGraph.size())>((1/2+epsilon)*g.order()));
 
-    cout<<blackGraph<<"\n";
+    //cout<<blackGraph<<"\n";
 
 
-    cout<<g<<"\n";
+    //cout<<g<<"\n";
+
+    Graph myGraph(createG(f));
+    for (int i = 0; i<16; i++)
+        addV(myGraph, i, f);
+    addE(myGraph, Loc( 0,1 ));
+    addE(myGraph, Loc( 0,9 ));
+    addE(myGraph, Loc( 0,11 ));
+    addE(myGraph, Loc( 1,2 ));
+    addE(myGraph, Loc( 1,10 ));
+    addE(myGraph, Loc( 2,3 ));
+    addE(myGraph, Loc( 2,14 ));
+    addE(myGraph, Loc( 3,4 ));
+    addE(myGraph, Loc( 3,13 ));
+    addE(myGraph, Loc( 4,5 ));
+    addE(myGraph, Loc( 4,13 ));
+    addE(myGraph, Loc( 5,6 ));
+    addE(myGraph, Loc( 5,14 ));
+    addE(myGraph, Loc( 6,7 ));
+    addE(myGraph, Loc( 6,15 ));
+    addE(myGraph, Loc( 7,8 ));
+    addE(myGraph, Loc( 7,15 ));
+    addE(myGraph, Loc( 8,9 ));
+    addE(myGraph, Loc( 8,15 ));
+    addE(myGraph, Loc( 9,10 ));
+    addE(myGraph, Loc( 10,11 ));
+    addE(myGraph, Loc( 11,12 ));
+    addE(myGraph, Loc( 12,13 ));
+    addE(myGraph, Loc( 12,14 ));
+
+    set<Number> v0;
+    v0.insert(0);
+    v0.insert(1);
+    v0.insert(7);
+    v0.insert(8);
+    v0.insert(9);
+    v0.insert(10);
+    v0.insert(11);
+    v0.insert(15);
+
+    set<Number> derivateSetS = getHelpfulSet(myGraph, v0, epsilon, f);
 
 
-    set<Number> ourSet = redBlackEdges(g, blackEdges, epsilon, blackGraph, f);
+//    set<Number> ourSet = redBlackEdges(g, blackEdges, epsilon, blackGraph, f);
+//
+//    cout<<ourSet<<"\n";
 
-    cout<<ourSet;
+    cout<<derivateSetS;
 
 
 }
