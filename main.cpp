@@ -1,9 +1,12 @@
-#include <set>
+//#include <set>
 #include <iostream>
 #include "basic_impl.hpp"
 #include "io/print_nice.hpp"
 #include <invariants.hpp>
-#include "oneHelpfulSet.cpp"
+#include "cutSizeBisection.cpp"
+#include "pathDecomposition.cpp"
+//#include "gtest/gtest.h"
+//#include "gmock/gmock.h"
 
 
 using namespace ba_graph;
@@ -13,7 +16,11 @@ using namespace std;
 // g++ -std=c++17 -fconcepts main.cpp
 
 
-int main() {
+int main(){
+//int main(int argc, char* argv[]) {
+//    testing::InitGoogleTest(&argc, argv);
+//    RUN_ALL_TESTS();
+
     Factory f;
     Graph g(createG(f));
 
@@ -151,24 +158,144 @@ int main() {
     addE(myGraph, Loc( 12,13 ));
     addE(myGraph, Loc( 12,14 ));
 
-    set<Number> v0;
-    v0.insert(0);
-    v0.insert(1);
-    v0.insert(7);
-    v0.insert(8);
-    v0.insert(9);
-    v0.insert(10);
-    v0.insert(11);
-    v0.insert(15);
+    Graph symethricGraph(createG(f));
 
-    set<Number> derivateSetS = getHelpfulSet(myGraph, v0, epsilon, f);
+    for (int i=0; i<10; i++)
+        addV(symethricGraph, i);
+    addE(symethricGraph, Loc( 0,2 ));
+    addE(symethricGraph, Loc( 0,7 ));
+    addE(symethricGraph, Loc( 0,9 ));
+    addE(symethricGraph, Loc( 1,6 ));
+    addE(symethricGraph, Loc( 1,8 ));
+    addE(symethricGraph, Loc( 1,9 ));
+    addE(symethricGraph, Loc( 2,4 ));
+    addE(symethricGraph, Loc( 2,7 ));
+    addE(symethricGraph, Loc( 3,5 ));
+    addE(symethricGraph, Loc( 3,6 ));
+    addE(symethricGraph, Loc( 3,8 ));
+    addE(symethricGraph, Loc( 4,7 ));
+    addE(symethricGraph, Loc( 4,9 ));
+    addE(symethricGraph, Loc( 5,6 ));
+    addE(symethricGraph, Loc( 5,8 ));
+
+    Graph koliskaGraph(createG(f));
+
+    for (int i=0; i<14; i++)
+        addV(koliskaGraph, i);
+    addE(koliskaGraph, Loc( 0,11 ));
+    addE(koliskaGraph, Loc( 0,12 ));
+    addE(koliskaGraph, Loc( 0,13 ));
+    addE(koliskaGraph, Loc( 1,7 ));
+    addE(koliskaGraph, Loc( 1,10 ));
+    addE(koliskaGraph, Loc( 1,12 ));
+    addE(koliskaGraph, Loc( 2,6 ));
+    addE(koliskaGraph, Loc( 2,8 ));
+    addE(koliskaGraph, Loc( 2,10 ));
+    addE(koliskaGraph, Loc( 3,11 ));
+    addE(koliskaGraph, Loc( 3,12 ));
+    addE(koliskaGraph, Loc( 3,13 ));
+    addE(koliskaGraph, Loc( 4,5 ));
+    addE(koliskaGraph, Loc( 4,6 ));
+    addE(koliskaGraph, Loc( 4,9 ));
+    addE(koliskaGraph, Loc( 5,7 ));
+    addE(koliskaGraph, Loc( 5,9 ));
+    addE(koliskaGraph, Loc( 6,8 ));
+    addE(koliskaGraph, Loc( 7,10 ));
+    addE(koliskaGraph, Loc( 8,9 ));
+    addE(koliskaGraph, Loc( 11,13 ));
+
+    Graph bigGraph(createG(f));
+
+    for (int i=0; i<32; i++)
+        addV(bigGraph, i);
+    addE(bigGraph, Loc( 0,1 ));
+    addE(bigGraph, Loc( 0,15 ));
+    addE(bigGraph, Loc( 0,16 ));
+    addE(bigGraph, Loc( 1,2 ));
+    addE(bigGraph, Loc( 1,17 ));
+    addE(bigGraph, Loc( 2,3 ));
+    addE(bigGraph, Loc( 2,18 ));
+    addE(bigGraph, Loc( 3,4 ));
+    addE(bigGraph, Loc( 3,20 ));
+    addE(bigGraph, Loc( 4,5 ));
+    addE(bigGraph, Loc( 4,21 ));
+    addE(bigGraph, Loc( 5,6 ));
+    addE(bigGraph, Loc( 5,22 ));
+    addE(bigGraph, Loc( 6,7 ));
+    addE(bigGraph, Loc( 6,23 ));
+    addE(bigGraph, Loc( 7,8 ));
+    addE(bigGraph, Loc( 7,24 ));
+    addE(bigGraph, Loc( 8,9 ));
+    addE(bigGraph, Loc( 8,24 ));
+    addE(bigGraph, Loc( 9,10 ));
+    addE(bigGraph, Loc( 9,26 ));
+    addE(bigGraph, Loc( 10,11 ));
+    addE(bigGraph, Loc( 10,26 ));
+    addE(bigGraph, Loc( 11,12 ));
+    addE(bigGraph, Loc( 11,30 ));
+    addE(bigGraph, Loc( 12,13 ));
+    addE(bigGraph, Loc( 12,27 ));
+    addE(bigGraph, Loc( 13,14 ));
+    addE(bigGraph, Loc( 13,27 ));
+    addE(bigGraph, Loc( 14,15 ));
+    addE(bigGraph, Loc( 14,28 ));
+    addE(bigGraph, Loc( 15,16 ));
+    addE(bigGraph, Loc( 16,28 ));
+    addE(bigGraph, Loc( 17,18 ));
+    addE(bigGraph, Loc( 17,29 ));
+    addE(bigGraph, Loc( 18,29 ));
+    addE(bigGraph, Loc( 19,20 ));
+    addE(bigGraph, Loc( 19,27 ));
+    addE(bigGraph, Loc( 19,31 ));
+    addE(bigGraph, Loc( 20,21 ));
+    addE(bigGraph, Loc( 21,31 ));
+    addE(bigGraph, Loc( 22,23 ));
+    addE(bigGraph, Loc( 22,25 ));
+    addE(bigGraph, Loc( 23,25 ));
+    addE(bigGraph, Loc( 24,25 ));
+    addE(bigGraph, Loc( 26,30 ));
+    addE(bigGraph, Loc( 28,29 ));
+    addE(bigGraph, Loc( 30,31 ));
+
+
+    pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>>
+            bisectionSet = getGoodBisection(bigGraph, epsilon, f);
 
 
 //    set<Number> ourSet = redBlackEdges(g, blackEdges, epsilon, blackGraph, f);
 //
 //    cout<<ourSet<<"\n";
 
-    cout<<derivateSetS;
+    cout<<bisectionSet;
+
+    Graph v0Graph(createG(f));
+    for (auto &n:bisectionSet.first.second)
+        addV(v0Graph, n);
+    for (auto &n:bisectionSet.first.second)
+        for (auto &n2: bigGraph[n])
+            if ((n.to_int()<n2.n2().to_int())&&(bisectionSet.first.second.find(n2.n2())!=bisectionSet.first.second.end()))
+                addE(v0Graph, Loc(n, n2.n2()));
+    Graph v1Graph(createG(f));
+    for (auto &n:bisectionSet.second.second)
+        addV(v1Graph, n);
+    for (auto &n:bisectionSet.second.second)
+        for (auto &n2: bigGraph[n])
+            if ((n.to_int()<n2.n2().to_int())&&(bisectionSet.second.second.find(n2.n2())!=bisectionSet.second.second.end()))
+                addE(v1Graph, Loc(n, n2.n2()));
+
+    vector<set<Number>> v0Decomposition;
+    makeDecomposition(v0Graph, v0Decomposition, bisectionSet.first.first, bisectionSet.first.second);
+    vector<set<Number>> v1Decomposition;
+    makeDecomposition(v1Graph, v1Decomposition, bisectionSet.second.first, bisectionSet.second.second);
+
+    vector<set<Number>> middleDecomposition = getMiddleDecomposition(bigGraph, middleDecomposition, bisectionSet.first.first,
+            bisectionSet.second.first);
+
+    cout<<v0Decomposition<<"\n";
+
+    cout<<v1Decomposition<<"\n";
+
+    cout<<middleDecomposition<<"\n";
 
 
 }

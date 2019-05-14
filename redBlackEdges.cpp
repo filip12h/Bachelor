@@ -496,7 +496,6 @@ void reduceStep2(Graph &g, set<Number> graphToReduce,  map<Number, bool> &isRemo
     }
 }
 
-//
 node* createSubtree(Graph &graph, node* &root, set<Number> &vertices, set<pair<Number, Number>> edges){
     for (auto &inc: graph[root->vertex])
         //aby sme sa z vrchola pozerali do podstromu a po spravnej hrane
@@ -896,7 +895,7 @@ set<Number> reducedGraph(Graph &graph, set<pair<Number, Number>> &blackEdges, fl
 
 /*
 * funkcia z grafu, v ktorom su cervene a cierne hrany take, ze kazdeho vrcholu sa dotyka aspon jedna cierna hrana
-* a zaroven nech je cervenych hran viac ako ciernych.
+* a zaroven nech je cervenych hran viac ako polovica počtu vrcholov.
 * Najdeme mnozinu urcitej/obmedzenej velkosti taku, ze cervenych interncyh hran je viac ako ciernych externych
 */
 set<Number> redBlackEdges(Graph &g, set<pair<Number, Number>> &blackEdges, float epsilon, Graph &ciernyGraf, Factory &f) {
@@ -908,10 +907,13 @@ set<Number> redBlackEdges(Graph &g, set<pair<Number, Number>> &blackEdges, float
 
     //some simple cases such that small positive set or 2 (or more) small sets connected via a red edge
     for (auto &comp: rodinaCiernychKomponentov){
-        if (isPositive(comp, g, blackEdges))
-            return comp;
-        else if (isPositive(smallSetsViaRedEdge(comp, g, blackEdges, epsilon, rodinaCiernychKomponentov, true), g, blackEdges))
-            return smallSetsViaRedEdge(comp, g, blackEdges, epsilon, rodinaCiernychKomponentov, true);
+        if (!isLarge(comp, g, blackEdges, epsilon)) {
+            if (isPositive(comp, g, blackEdges))
+                return comp;
+            else if (isPositive(smallSetsViaRedEdge(comp, g, blackEdges, epsilon, rodinaCiernychKomponentov, true), g,
+                                blackEdges))
+                return smallSetsViaRedEdge(comp, g, blackEdges, epsilon, rodinaCiernychKomponentov, true);
+        }
     }
 
 

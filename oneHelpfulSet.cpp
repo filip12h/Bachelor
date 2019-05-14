@@ -1,6 +1,6 @@
-#include "basic_impl.hpp"
+//#include "basic_impl.hpp"
 #include "redBlackEdges.cpp"
-#include <algorithm>
+//#include <algorithm>
 #include <unordered_set>
 
 using namespace std;
@@ -196,8 +196,12 @@ map<Number, set<Number>> transformationType2(set<Number> cVertices, set<Number> 
 
     bool gamaInD1, deltaInD1, doTransformation;
     Number beta, gama, delta;
+    set<Number> copyOfD3Vertices;
+    for (auto &n: d3Vertices)
+        copyOfD3Vertices.insert(n);
     for (auto &v: d3Vertices){
         gamaInD1 = false; deltaInD1 = false; doTransformation = false;
+        //we dont need to check if neighbor is already in previous neighbors, because "if" denies repeating of vertices
         for (auto &n: neighbors[v]){
             for (auto &n2: neighbors[n]){
                 if ((d1Vertices.find(n2) != d1Vertices.end()) || (d2Vertices.find(n2) != d2Vertices.end()))
@@ -229,7 +233,7 @@ map<Number, set<Number>> transformationType2(set<Number> cVertices, set<Number> 
             executedTransformations.insert(pair(pair(pair(v,gama), pair(beta,delta)), pair(pair(v,beta),
                     pair(gama,delta))));
             //update d1, d2, d3, e sets
-            d3Vertices.erase(v);
+            copyOfD3Vertices.erase(v); //I cannot erase elements of d3Vertices in for loop of d3Vertices
             d2Vertices.insert(v);
             if (deltaInD1){
                 d1Vertices.erase(delta);
@@ -240,6 +244,9 @@ map<Number, set<Number>> transformationType2(set<Number> cVertices, set<Number> 
             }
         }
     }
+    d3Vertices.clear();
+    for (auto &n: copyOfD3Vertices)
+        d3Vertices.insert(n); //because we use reference of d3Vertices in call of function
 
     return neighbors;
 }
@@ -270,7 +277,7 @@ set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &
         for (auto &n:neighbors[v])
             if (v0.find(n) != v0.end())
                 numOfNeighborsInside++;
-        if (numOfNeighborsInside==1){
+        if (numOfNeighborsInside<=1){
             vertices.insert(v);
             return vertices;
         }
