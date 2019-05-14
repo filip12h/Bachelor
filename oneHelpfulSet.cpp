@@ -23,14 +23,14 @@ int helpfulnessOfSet(Graph &graph, set<Number> v0, set<Number> s, set<pair<Numbe
     return i-j;
 }
 
-set<Number> getUnion(const set<Number>& a, const set<Number>& b)
+multiset<Number> getUnion(const multiset<Number>& a, const multiset<Number>& b)
 {
-    set<Number> result = a;
+    multiset<Number> result = a;
     result.insert(b.begin(), b.end());
     return result;
 }
 
-set<Number> find3ConnectedCVertices(map<Number, set<Number>> neighbors, set<Number> cVertices){
+set<Number> find3ConnectedCVertices(map<Number, multiset<Number>> neighbors, set<Number> cVertices){
     set<Number> result;
     for (auto &v1: cVertices)
         for (auto &v2: neighbors[v1])
@@ -59,7 +59,7 @@ set<Number> getCVertices(set<Number> v0, set<pair<Number, Number>> &cut){
     return vertices;
 }
 
-set<Number> getDVertices(map<Number, set<Number>> neighbors, set<Number> cVertices, set<Number> v0){
+set<Number> getDVertices(map<Number, multiset<Number>> neighbors, set<Number> cVertices, set<Number> v0){
     //we find all vertices connected to cVertices and not in cut
 
     set<Number> vertices;
@@ -83,8 +83,8 @@ set<Number> getEVertices(set<Number> &v0, set<Number> cVertices, set<Number> dVe
     return vertices;
 }
 
-map<Number, set<Number>> transformationType1(set<Number> &cVertices, set<Number> &d1Vertices, set<Number> &d2Vertices,
-        set<Number> &d3Vertices, set<Number> &eVertices, map<Number, set<Number>> neighbors,
+map<Number, multiset<Number>> transformationType1(set<Number> &cVertices, set<Number> &d1Vertices, set<Number> &d2Vertices,
+        set<Number> &d3Vertices, set<Number> &eVertices, map<Number, multiset<Number>> neighbors,
         set<pair<pair<pair<Number, Number>, pair<Number, Number>>, pair<pair<Number, Number>, pair<Number, Number>>>>
                                              &executedTransformations){
     bool notAllTransformationsYet = true;
@@ -189,8 +189,8 @@ map<Number, set<Number>> transformationType1(set<Number> &cVertices, set<Number>
 
 }
 
-map<Number, set<Number>> transformationType2(set<Number> cVertices, set<Number> &d1Vertices, set<Number> &d2Vertices,
-        set<Number> &d3Vertices, set<Number> &eVertices, map<Number, set<Number>> neighbors,
+map<Number, multiset<Number>> transformationType2(set<Number> cVertices, set<Number> &d1Vertices, set<Number> &d2Vertices,
+        set<Number> &d3Vertices, set<Number> &eVertices, map<Number, multiset<Number>> neighbors,
         set<pair<pair<pair<Number, Number>, pair<Number, Number>>, pair<pair<Number, Number>, pair<Number, Number>>>>
                                              &executedTransformations){
 
@@ -264,10 +264,11 @@ set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &
 
     set<Number> vertices;
 
-    map<Number, set<Number>> neighbors, transformedNeighbors;
+    map<Number, multiset<Number>> neighbors, transformedNeighbors;
 
     for (auto &rot: graph)
-        neighbors[rot.n()] = rot.neighbours();
+        for (auto &inc: graph[rot.n()])
+            neighbors[rot.n()].insert(inc.n2());
 
     set<Number> cVertices = getCVertices(v0, cut);
 

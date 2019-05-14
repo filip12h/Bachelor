@@ -38,6 +38,7 @@ set<Number> getTreeComponent(Graph &graph, set<Number> vertices){
                 return possibleResult;
         }
     }
+    //return NULL;
 }
 
 vector<set<Number>> getMiddleDecomposition(Graph &graph, vector<set<Number>> &decomposition, set<Number> &v0Vertices,
@@ -64,9 +65,11 @@ vector<set<Number>> getMiddleDecomposition(Graph &graph, vector<set<Number>> &de
         v0Vertices.erase(vertex);
         decomposition = getMiddleDecomposition(graph, decomposition, v0Vertices, v1Vertices);
     }
+    return decomposition;
 }
 
-void makeDecomposition(Graph &graph, vector<set<Number>> &decomposition, set<Number> &currentSet,
+//until 25th set of decomposition of bigGraph working well
+vector<set<Number>> makeDecomposition(Graph &graph, vector<set<Number>> &decomposition, set<Number> &currentSet,
         set<Number> &verticesToDecompose){
     decomposition.push_back(currentSet);
     int setSize = currentSet.size();
@@ -85,7 +88,8 @@ void makeDecomposition(Graph &graph, vector<set<Number>> &decomposition, set<Num
                 for (auto &v: currentSet)
                     newSet.insert(v);
                 newSet.erase(n);
-                makeDecomposition(graph, decomposition, newSet, verticesToDecompose);
+                decomposition = makeDecomposition(graph, decomposition, newSet, verticesToDecompose);
+                return decomposition;
             } else if (neighborsOutside == 1){ // case 2
                 case3possible = false;
                 Number neighbor;
@@ -100,7 +104,8 @@ void makeDecomposition(Graph &graph, vector<set<Number>> &decomposition, set<Num
                 decomposition.push_back(newSet);
                 newSet.erase(n);
                 verticesToDecompose.erase(n);
-                makeDecomposition(graph, decomposition, newSet, verticesToDecompose);
+                decomposition = makeDecomposition(graph, decomposition, newSet, verticesToDecompose);
+                return decomposition;
             }
         }
         if (case3possible){ // case 3
@@ -124,13 +129,13 @@ void makeDecomposition(Graph &graph, vector<set<Number>> &decomposition, set<Num
                             break;
                     }
 //                for (auto &n: verticesToRemove)
-//                    verticesToDecompose.erase(n); //TODO delete these rows
-                makeDecomposition(graph, decomposition, currentSet, verticesToDecompose);
+//                    verticesToDecompose.erase(n);
+                decomposition = makeDecomposition(graph, decomposition, currentSet, verticesToDecompose);
+                    return decomposition;
             }
         }
-    } //else if (setSize==1)
-
-
-
+        return decomposition;
+    } else //if (setSize==1){
+        return decomposition;
 }
 
