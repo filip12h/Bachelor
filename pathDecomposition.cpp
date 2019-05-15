@@ -41,9 +41,42 @@ set<Number> getTreeComponent(Graph &graph, set<Number> vertices){
     //return NULL;
 }
 
+//this is not actualy tree decomposition, but path decomposition of a tree
+//we have to know from what vertex did we come from. that is the purpose of "from"
+vector<set<Number>> treeDecomposition(Graph &graph, set<Number> treeVertices, Number vertex, Number from){
+    vector<set<Number>> decomposition;
+    int numOfNeighbors = 0;
+    for (auto &inc: graph[vertex]){
+        if ((treeVertices.find(inc.n2())!=treeVertices.end())&&(from.to_int()!=inc.n2().to_int())){
+            numOfNeighbors++;
+            decomposition = treeDecomposition(graph, treeVertices, inc.n2(), vertex);
+        }
+    }
+    if (numOfNeighbors==0){
+        set<Number> bag;
+        bag.insert(vertex);
+        decomposition.push_back(bag);
+    }
+    for (auto &bag: decomposition)
+        bag.insert(vertex);
+    return decomposition;
+}
+
+//TODO: function will reduce components, i.e. bags which are subsets of neighbor bags will be removed
+// we will get value of pathwidth
+int reduceDecomposition(vector<set<Number>> &decomposition){
+
+
+    return 0;
+}
+
 vector<set<Number>> getMiddleDecomposition(Graph &graph, vector<set<Number>> &decomposition, set<Number> &v0Vertices,
         set<Number> v1Vertices){
-    decomposition.push_back(v0Vertices);
+    set<Number> newBag;
+    for (auto &n: v0Vertices)
+        newBag.insert(n);
+    decomposition.push_back(newBag);
+
     bool endOfDecomp = true;
     for (auto &n: v0Vertices)
         if (v1Vertices.find(n)==v1Vertices.end())
@@ -71,9 +104,9 @@ vector<set<Number>> getMiddleDecomposition(Graph &graph, vector<set<Number>> &de
 //until 25th set of decomposition of bigGraph working well
 vector<set<Number>> makeDecomposition(Graph &graph, vector<set<Number>> &decomposition, set<Number> &currentSet,
         set<Number> &verticesToDecompose){
-    decomposition.push_back(currentSet);
     int setSize = currentSet.size();
-    if (setSize>1) {
+    if (setSize>0) {
+        decomposition.push_back(currentSet);
         bool case3possible = true; // case 3 is possible if every vertex in currentSet has at least 2 neighbors outside
         for (auto &n: currentSet) {
             int neighborsOutside = 0;
@@ -116,8 +149,14 @@ vector<set<Number>> makeDecomposition(Graph &graph, vector<set<Number>> &decompo
                     if (currentSet.find(n)==currentSet.end())
                         vertices.insert(n);
                 set<Number> treeComponent = getTreeComponent(graph, vertices);
-                //TODO: dunno how to decompose a tree
-                cout<<"WARNING: WE HAVE TO COMPLETE CASE 3.A";
+                vector<set<Number>> treeBags = treeDecomposition(graph, treeComponent, treeComponent.begin().operator*(),
+                        currentSet.begin().operator*());
+                for (auto &bag: treeBags) {
+                    for (auto &n: currentSet)
+                        bag.insert(n);
+                    decomposition.push_back(bag);
+                }
+                //cout<<"WARNING: is this working properly???";
             } else { // case 3.B ... setSize < graphSize/3 +1
                 set<Number> verticesToRemove;
                 for (auto &n: verticesToDecompose)
@@ -138,4 +177,3 @@ vector<set<Number>> makeDecomposition(Graph &graph, vector<set<Number>> &decompo
     } else //if (setSize==1){
         return decomposition;
 }
-

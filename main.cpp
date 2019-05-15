@@ -120,10 +120,11 @@ int main(){
 
     float epsilon;
 
-    cout<< "Zvol hodnotu epsilon z intervalu (0, 1/2)\n";//pozn: prilis velke alebo male epsilon nam nemusia vyhovovat
+    cout<< "Zvol hodnotu epsilon\n";
+    //pozn: prilis velke alebo male epsilon nam nemusia vyhovovat
     cin >> epsilon;
 
-    assert((g.size()-blackGraph.size())>((1/2+epsilon)*g.order()));
+    //assert((g.size()-blackGraph.size())>((1.0/2+epsilon)*g.order()));
 
     //cout<<blackGraph<<"\n";
 
@@ -258,28 +259,30 @@ int main(){
     addE(bigGraph, Loc( 30,31 ));
 
 
+
+
     pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>>
-            bisectionSet = getGoodBisection(bigGraph, epsilon, f);
+            bisectionSet = getGoodBisection(symethricGraph, epsilon, f);
 
 
 //    set<Number> ourSet = redBlackEdges(g, blackEdges, epsilon, blackGraph, f);
 //
 //    cout<<ourSet<<"\n";
 
-    cout<<bisectionSet;
+    cout<<bisectionSet<<"\n\n";
 
     Graph v0Graph(createG(f));
     for (auto &n:bisectionSet.first.second)
         addV(v0Graph, n);
     for (auto &n:bisectionSet.first.second)
-        for (auto &n2: bigGraph[n])
+        for (auto &n2: symethricGraph[n])
             if ((n.to_int()<n2.n2().to_int())&&(bisectionSet.first.second.find(n2.n2())!=bisectionSet.first.second.end()))
                 addE(v0Graph, Loc(n, n2.n2()));
     Graph v1Graph(createG(f));
     for (auto &n:bisectionSet.second.second)
         addV(v1Graph, n);
     for (auto &n:bisectionSet.second.second)
-        for (auto &n2: bigGraph[n])
+        for (auto &n2: symethricGraph[n])
             if ((n.to_int()<n2.n2().to_int())&&(bisectionSet.second.second.find(n2.n2())!=bisectionSet.second.second.end()))
                 addE(v1Graph, Loc(n, n2.n2()));
 
@@ -288,7 +291,8 @@ int main(){
     vector<set<Number>> v1Decomposition;
     makeDecomposition(v1Graph, v1Decomposition, bisectionSet.second.first, bisectionSet.second.second);
 
-    vector<set<Number>> middleDecomposition = getMiddleDecomposition(bigGraph, middleDecomposition, bisectionSet.first.first,
+    vector<set<Number>> middleDecomposition;
+    middleDecomposition = getMiddleDecomposition(symethricGraph, middleDecomposition, bisectionSet.first.first,
             bisectionSet.second.first);
 
     cout<<v0Decomposition<<"\n";
@@ -296,6 +300,9 @@ int main(){
     cout<<v1Decomposition<<"\n";
 
     cout<<middleDecomposition<<"\n";
+
+    //test if decomposition is working well
+
 
 
 }

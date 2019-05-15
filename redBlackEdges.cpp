@@ -109,13 +109,13 @@ vector<Graph> getComponents(Graph &g, Factory f) {
     return components;
 }
 
-// metoda vrati komponenty grafu
+// we will get components of graph
 set<set<Number>> connectedComponents(Graph &g) {
     set<set<Number>> components;
     map<Number, int> visited;
     for(auto &rot: g) visited[rot.n()]=0;
 
-    //najdeme nenavstiveny vrchol a nasledne najdeme hrany a vrcholy s nim spojene
+    // we will find not visited vertex and its neighbors
     for (auto &rot: g) {
         set<Number> vertices;
         if (!visited[rot.n()]) {
@@ -126,14 +126,13 @@ set<set<Number>> connectedComponents(Graph &g) {
     return components;
 }
 
-//isRemoved nekoresponduje s isRemoved v redukcii grafu, tuto mame oznacene vrcholy isRemoved tie,
-// ktore nepatria do vymazanych stromov. Paradox.
+//we will get components of graph, vertices marked as removed we ignore
 set<set<Number>> connectedComponents(Graph &graph, set<Number> g, map<Number, bool> &isRemoved){
     set<set<Number>> components;
     map<Number, int> visited;
     for(auto &n: g) visited[n]=0;
 
-    //najdeme nenavstiveny vrchol a nasledne najdeme hrany a vrcholy s nim spojene
+    // we will find not visited vertex and its neighbors
     for (auto &n: g) {
         if ((!visited[n])&&(!isRemoved[n])) {
             set<Number> vertices;
@@ -178,10 +177,9 @@ int isPositive(set<Number> vertices, Graph &g, set<pair<Number, Number>> blackEd
     else return 0;
 }
 
-//trosku zbytocna funkcia, ale budis...
-//pri step1 vyzadujem mnozinu
+
 bool isLarge(set<Number> vertices, Graph &g, set<pair<Number, Number>> blackEdges, float epsilon){
-    return (vertices.size() > (1+2*epsilon)/epsilon);
+    return (vertices.size() > (1.0+2*epsilon)/epsilon);
 }
 
 //optional TODO: opakujuci sa kod vo funkciach alfa() a s() a smallSetsViaRedEdge()
@@ -373,7 +371,7 @@ bool isFat(map<pair<Number, Number>, set<Number>> &extraEdges, pair<Number, Numb
         vertices = extraEdges.at(pair(edge.second, edge.first));
     } //kedze neorientovana hrana moze byt ulozena dvojakym sposobom
     return s(vertices, g, blackEdges, epsilon, connectedComponents)>
-           (4/(epsilon/(1+2*epsilon)))*alfa(vertices, g, blackEdges, epsilon, connectedComponents);
+           (4.0/(epsilon/(1.0+2*epsilon)))*alfa(vertices, g, blackEdges, epsilon, connectedComponents);
 }
 
 //sum of alfas of non-fat edges (components represented by edge in reduced graph) incident to vertex
@@ -660,7 +658,7 @@ set<Number> u(set<Number> path, set<node*> &allNodes, set<Number> &graphOfDesign
 bool isPathPlus(set<Number> path, set<node*> &allNodes, set<Number> graphOfDesignatedVertices,
         Graph &blackGraph, set<pair<Number, Number>> &blackEdges, float epsilon, set<set<Number>> &connectedComponents){
     set<Number> vertices = u(path, allNodes, graphOfDesignatedVertices);
-    return ((4/((epsilon/(2*epsilon+1))))*alfa(vertices, blackGraph, blackEdges, epsilon, connectedComponents))>=
+    return ((4.0/((epsilon/(2*epsilon+1))))*alfa(vertices, blackGraph, blackEdges, epsilon, connectedComponents))>=
     s(vertices, blackGraph, blackEdges, epsilon, connectedComponents);
 }
 
@@ -691,9 +689,17 @@ set<Number> reducedGraph(Graph &graph, set<pair<Number, Number>> &blackEdges, fl
     map<pair<Number, Number>, set<Number>> extraEdges = edgeRef(blackGraph, isRemoved, blackEdges);
 
     Graph rg(createG(f)); //create reduced graph rg
-    for (auto &rot: graph) // add all remaining (not removed) vertices in graph to rg
+    for (auto &rot: graph) {
+        for (auto &inc: rot){ //we check if there is vertex v such that there exist edge from v to v
+            if (inc.n2().to_int() == rot.n().to_int()) {
+                set<Number> result;
+                result.insert(rot.n());
+                return result;
+            }
+        }
         if (!isRemoved[rot.n()])
-            addV(rg, rot.n());
+            addV(rg, rot.n()); // add all remaining (not removed) vertices in graph to rg
+    }
 
     for (auto &rot: rg)
         for (auto &inc: graph[rot.n()])//add black edges between added vertices to rg
@@ -929,5 +935,4 @@ set<Number> redBlackEdges(Graph &g, set<pair<Number, Number>> &blackEdges, float
     //TODO: add as parameter also rodinaCiernychKomponentov?
     return reducedGraph(g, blackEdges, epsilon, isRemoved,
             rodinaCiernychKomponentov, ciernyGraf, f);
-
 }

@@ -24,17 +24,19 @@ pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>>
 
     int cutsize = getCutsize(graph, v0, v1);
     int cutsetDifference = graph.order()/2; //TODO: this might be variable parameter
-    float limit = (1/6 + epsilon)*graph.order();
+    float limit = (1.0/6)*graph.order();
     int v0size = v0.size(), v1size = v1.size();
-    while ((abs(v1size-v0size)>=cutsetDifference)||(cutsize>=limit)) {
+    while ((abs(v1size-v0size)>=cutsetDifference)||(cutsize>limit)) {
         if (v1.size() > v0.size()) {
-            set<Number> setToMove = getHelpfulSet(graph, v1, epsilon, f);
+            set<Number> setToMove = getHelpfulSet(graph, v1, epsilon, f, false);
+            if (setToMove.empty()) break; //if we havent found setToMove, end while cycle
             for (auto &n: setToMove) {
                 v1.erase(n);
                 v0.insert(n);
             }
         } else {
-            set<Number> setToMove = getHelpfulSet(graph, v0, epsilon, f);
+            set<Number> setToMove = getHelpfulSet(graph, v0, epsilon, f, false);
+            if (setToMove.empty()) break;//if we havent found setToMove, end while cycle
             for (auto &n: setToMove) {
                 v0.erase(n);
                 v1.insert(n);
@@ -49,26 +51,50 @@ pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>>
             if (v0.find(n2.n2())==v0.end())
                 cut.insert(pair(n, n2.n2()));
 
-    //if it is possible to decrease size difference between sections v0 and v1, do it
-    while (true) {
-        int v1size = v1.size(), v0size = v0.size(); //for unknown reason I cannot put functions into if condition
+    //check some little moves
+    while (true){
+        v1size = v1.size();
+        v0size = v0.size(); //for some reason I cannot put functions into if condition
         if (v1size - v0size > 1) {
-            if (helpfulnessOfSet(graph, v1, getHelpfulSet(graph, v1, epsilon, f), cut) > 0) {
-                set<Number> setToMove = getHelpfulSet(graph, v1, epsilon, f);
+            set<Number> setToMove = getHelpfulSet(graph, v1, epsilon, f, true);
+            if (helpfulnessOfSet(graph, v1, setToMove, cut) > 0) {
                 for (auto &n: setToMove) {
                     v1.erase(n);
                     v0.insert(n);
                 }
-            }
-        } else if (v0size - v1size > 1) {
-            if (helpfulnessOfSet(graph, v0, getHelpfulSet(graph, v0, epsilon, f), cut) > 0) {
-                set<Number> setToMove = getHelpfulSet(graph, v0, epsilon, f);
+            } else break;
+        } else {
+            set<Number> setToMove = getHelpfulSet(graph, v1, epsilon, f, true);
+            if (helpfulnessOfSet(graph, v0, setToMove, cut) > 0) {
                 for (auto &n: setToMove) {
                     v0.erase(n);
                     v1.insert(n);
                 }
             } else break;
-        } else break;
+        }
+    }
+
+    //if it is possible to decrease size difference between sections v0 and v1, do it
+    while (true) {
+        v1size = v1.size();
+        v0size = v0.size(); //for some reason I cannot put functions into if condition
+        if (v1size - v0size > 1) {
+            set<Number> setToMove = getHelpfulSet(graph, v1, epsilon, f, false);
+            if (helpfulnessOfSet(graph, v1, setToMove, cut) > 0) {
+                for (auto &n: setToMove) {
+                    v1.erase(n);
+                    v0.insert(n);
+                }
+            } else break;
+        } else {
+            set<Number> setToMove = getHelpfulSet(graph, v1, epsilon, f, false);
+            if (helpfulnessOfSet(graph, v0, setToMove, cut) > 0) {
+                for (auto &n: setToMove) {
+                    v0.erase(n);
+                    v1.insert(n);
+                }
+            } else break;
+        }
     }
 
     set<Number> v0Vertices, v1Vertices;

@@ -251,9 +251,8 @@ map<Number, multiset<Number>> transformationType2(set<Number> cVertices, set<Num
     return neighbors;
 }
 
-
-
-set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &f){
+//simpleSteps is true when we check only directly catchable cases
+set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &f, bool simpleSteps){
 
     set<pair<Number, Number>> cut;
 
@@ -263,6 +262,9 @@ set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &
                 cut.insert(pair(v, e.n2()));
 
     set<Number> vertices;
+
+    if (cut.size() <= (1.0/3 + 2*epsilon)*v0.size())
+        return vertices;
 
     map<Number, multiset<Number>> neighbors, transformedNeighbors;
 
@@ -365,6 +367,11 @@ set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &
 
     }
 
+    if (simpleSteps){
+        possibleResult.clear();
+        return possibleResult;
+    }
+
     //every executed transformation includes 2 added vertices and 2 deleted vertices
     //at the first position there is couple of added edges, at the second position couple of deleted edges
     set<pair<pair<pair<Number, Number>, pair<Number, Number>>, pair<pair<Number, Number>, pair<Number, Number>>>>
@@ -428,7 +435,7 @@ set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &
     for (auto &e: redEdges)
         addE(redBlackGraph, Loc(e.first, e.second));
 
-    set<Number> derivedSetS = redBlackEdges(redBlackGraph, blackEdges, epsilon, onlyBlackGraph, f);
+    set<Number> derivedSetS = redBlackEdges(redBlackGraph, blackEdges, epsilon*3, onlyBlackGraph, f);
 
     //for (auto &trans: executedTransformations){
     for (auto trans = executedTransformations2.rbegin(); trans!=executedTransformations2.rend(); trans++)
@@ -468,5 +475,10 @@ set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &
                 vertices.insert(n);
     }
 
-    return vertices;
+    if (v0.size()-vertices.size() >= graph.order() / 3.0) {
+        return vertices;
+    } else {
+        vertices.clear();
+        return vertices;
+    }
 }
