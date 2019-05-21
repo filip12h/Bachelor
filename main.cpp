@@ -1,31 +1,23 @@
-//#include <set>
 #include <iostream>
 #include "basic_impl.hpp"
 #include "io/print_nice.hpp"
 #include <invariants.hpp>
 #include "cutSizeBisection.cpp"
 #include "pathDecomposition.cpp"
-//#include "gtest/gtest.h"
-//#include "gmock/gmock.h"
-
+#include <cmath>
 
 using namespace ba_graph;
 using namespace std;
 
-// program kompilujem nasledujucim prikazom
-// g++ -std=c++17 -fconcepts main.cpp
-
-
 int main(){
-//int main(int argc, char* argv[]) {
-//    testing::InitGoogleTest(&argc, argv);
-//    RUN_ALL_TESTS();
 
     Factory f;
+    /*
+     * here are some examples of graphs
+     */
     Graph g(createG(f));
-
-    //pozri do nakresov ako tento graf vyzera
-    for(int i=0;i<32;i++) addV(g, i, f);
+    for(int i=0;i<32;i++)
+        addV(g, i, f);
     addE(g, Loc( 0, 1), f);
     addE(g, Loc( 0, 3), f);
     addE(g, Loc( 0, 4), f);
@@ -75,62 +67,6 @@ int main(){
     addE(g, Loc( 29, 30), f);
     addE(g, Loc( 30, 31), f);
 
-    set<pair<Number, Number>> blackEdges;
-    Graph blackGraph(createG(f));
-    for (auto &rot: g)
-        addV(blackGraph, rot.n().to_int(), f);
-    addE(blackGraph, Loc( 0, 4), f);
-    addE(blackGraph, Loc( 1, 2), f);
-    addE(blackGraph, Loc( 2, 3), f);
-    addE(blackGraph, Loc( 5, 6), f);
-    addE(blackGraph, Loc( 6, 7), f);
-    addE(blackGraph, Loc( 8, 9), f);
-    addE(blackGraph, Loc( 9, 10), f);
-    addE(blackGraph, Loc( 10, 11), f);
-    addE(blackGraph, Loc( 12, 13), f);
-    addE(blackGraph, Loc( 12, 14), f);
-    addE(blackGraph, Loc( 13, 14), f);
-    addE(blackGraph, Loc( 13, 15), f);
-    addE(blackGraph, Loc( 14, 30), f);
-    addE(blackGraph, Loc( 16, 18), f);
-    addE(blackGraph, Loc( 17, 18), f);
-    addE(blackGraph, Loc( 18, 19), f);
-    addE(blackGraph, Loc( 19, 20), f);
-    addE(blackGraph, Loc( 19, 21), f);
-    addE(blackGraph, Loc( 20, 21), f);
-    addE(blackGraph, Loc( 21, 26), f);
-    addE(blackGraph, Loc( 22, 23), f);
-    addE(blackGraph, Loc( 22, 24), f);
-    addE(blackGraph, Loc( 23, 24), f);
-    addE(blackGraph, Loc( 23, 25), f);
-    addE(blackGraph, Loc( 24, 25), f);
-    addE(blackGraph, Loc( 25, 26), f);
-    addE(blackGraph, Loc( 26, 27), f);
-    addE(blackGraph, Loc( 27, 28), f);
-    addE(blackGraph, Loc( 27, 29), f);
-    addE(blackGraph, Loc( 28, 29), f);
-    addE(blackGraph, Loc( 28, 31), f);
-
-    for (auto &rot: blackGraph){
-        for (auto &inc: rot){
-            if (inc.n1()<inc.n2())
-                blackEdges.insert(pair(inc.n1(), inc.n2()));
-        }
-    }
-
-    float epsilon;
-
-    cout<< "Zvol hodnotu epsilon\n";
-    //pozn: prilis velke alebo male epsilon nam nemusia vyhovovat
-    cin >> epsilon;
-
-    //assert((g.size()-blackGraph.size())>((1.0/2+epsilon)*g.order()));
-
-    //cout<<blackGraph<<"\n";
-
-
-    //cout<<g<<"\n";
-
     Graph myGraph(createG(f));
     for (int i = 0; i<16; i++)
         addV(myGraph, i, f);
@@ -160,7 +96,6 @@ int main(){
     addE(myGraph, Loc( 12,14 ));
 
     Graph symethricGraph(createG(f));
-
     for (int i=0; i<10; i++)
         addV(symethricGraph, i);
     addE(symethricGraph, Loc( 0,2 ));
@@ -180,7 +115,6 @@ int main(){
     addE(symethricGraph, Loc( 5,8 ));
 
     Graph koliskaGraph(createG(f));
-
     for (int i=0; i<14; i++)
         addV(koliskaGraph, i);
     addE(koliskaGraph, Loc( 0,11 ));
@@ -258,31 +192,74 @@ int main(){
     addE(bigGraph, Loc( 28,29 ));
     addE(bigGraph, Loc( 30,31 ));
 
+    string answer;
+    cout<<"Do you want to use graph from command line? (y/n)";
+    cin>>answer;
 
+    assert((answer=="y")||(answer=="n"));
+    Graph graph(createG(f));
+    if (answer=="y"){
+        cout<<"Set number of vertices in graph\n";
+        int numOfVertices;
+        cin>>numOfVertices;
+        for (int i = 0; i<numOfVertices; i++)
+            addV(graph, i);
+        cout<<"now set all vertices in format \"u v\", where u and v are vertices which the edge connects\n";
+        cout<<"make sure that input graph is 3-regular\n";
+        for (int j = 0; j<numOfVertices*3/2; j++){
+            cout<<"edge number "<<j<<":";
+            int u, v;
+            cin>>u>>v;
+            addE(graph, Loc(u, v));
+        }
+    } else {
+        cout<<"make sure you have set your graph configuration in main.cpp\n";
+        cout<<"graph has to be 3-regular and its name must replace \"graph\" in rows under 4 \"TODO\"'s in main.cpp\n";
+        cout<<"for start path decomposition, type any symbol and push enter\n";
+        cin>>answer;
+    }
 
+    float epsilon = 1;
 
-    pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>>
-            bisectionSet = getGoodBisection(symethricGraph, epsilon, f);
+    //bisectionSet is in ((a, b), (c, d)) format, where b is V0, d is V1 and a(c) are C-vertices in V0(V1)
+    long long int bisectionWidth = INT64_MAX;
+    pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> bisectionSet;
+    while (true) {
+        //TODO: set name of your graph as parameter of getGoodBisection
+        pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>>
+                candidateBisection = getGoodBisection(graph, epsilon, f);
+        if (getCutsize(bigGraph, candidateBisection.first.second, candidateBisection.second.second)<bisectionWidth){
+            bisectionSet = candidateBisection;
+            //TODO: set name of your graph as parameter of getCutSize
+            bisectionWidth = getCutsize(graph, candidateBisection.first.second, candidateBisection.second.second);
+            //bisectionWidth = max(candidateBisection.first.first.size(), candidateBisection.second.first.size());
+        } else {
+            //long double limit = (1.0/(pow(graph.order(), 3)));
+            //this^ was considered as very low number for some larger graphs
+            if (epsilon<0.0000000000001) //every time I get here, it takes epsilon constant steps to det here
+                //in case of smaller graphs, we can increse value of limit, which epsilon has to undergo
+                break;
+        }
+        //to achive possibly better bisection we decrease epsilon
+        epsilon /= 2;
+    }
 
-
-//    set<Number> ourSet = redBlackEdges(g, blackEdges, epsilon, blackGraph, f);
-//
-//    cout<<ourSet<<"\n";
-
-    cout<<bisectionSet<<"\n\n";
+    //cout<<bisectionSet<<"\n\n";
 
     Graph v0Graph(createG(f));
     for (auto &n:bisectionSet.first.second)
         addV(v0Graph, n);
     for (auto &n:bisectionSet.first.second)
-        for (auto &n2: symethricGraph[n])
+        //TODO: set your graph's name in for auto loop. for example: yourGraph[n]
+        for (auto &n2: graph[n])
             if ((n.to_int()<n2.n2().to_int())&&(bisectionSet.first.second.find(n2.n2())!=bisectionSet.first.second.end()))
                 addE(v0Graph, Loc(n, n2.n2()));
     Graph v1Graph(createG(f));
     for (auto &n:bisectionSet.second.second)
         addV(v1Graph, n);
     for (auto &n:bisectionSet.second.second)
-        for (auto &n2: symethricGraph[n])
+        //TODO: set your graph's name in for auto loop
+        for (auto &n2: graph[n])
             if ((n.to_int()<n2.n2().to_int())&&(bisectionSet.second.second.find(n2.n2())!=bisectionSet.second.second.end()))
                 addE(v1Graph, Loc(n, n2.n2()));
 
@@ -292,17 +269,32 @@ int main(){
     makeDecomposition(v1Graph, v1Decomposition, bisectionSet.second.first, bisectionSet.second.second);
 
     vector<set<Number>> middleDecomposition;
-    middleDecomposition = getMiddleDecomposition(symethricGraph, middleDecomposition, bisectionSet.first.first,
+    //TODO: you have to set your graph as parameter to getMiddleDecomposition
+    middleDecomposition = getMiddleDecomposition(graph, middleDecomposition, bisectionSet.first.first,
             bisectionSet.second.first);
 
-    cout<<v0Decomposition<<"\n";
+    vector<set<Number>> decomposition;
+    decomposition.insert(decomposition.end(), v0Decomposition.rbegin(), v0Decomposition.rend());
+    decomposition.insert(decomposition.end(), middleDecomposition.begin(), middleDecomposition.end());
+    decomposition.insert(decomposition.end(), v1Decomposition.begin(), v1Decomposition.end());
 
-    cout<<v1Decomposition<<"\n";
+    //cout<<decomposition<<"\n";
 
-    cout<<middleDecomposition<<"\n";
+    int pathWidth = reduceDecomposition(decomposition);
+
+    cout<<"This graph's pathwidth is: "<<pathWidth<<"\n\n";
+    cout<<decomposition<<"\n";
+
+
+
+//    cout<<"Do you want to test if decomposition went good or wrong? (Y/N)"
+//    char answer;
+//    cin>>answer;
+//    if (answer == "Y"){
+//
+//    } else {
+//
+//    }
 
     //test if decomposition is working well
-
-
-
 }

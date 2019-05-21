@@ -38,23 +38,25 @@ set<Number> getTreeComponent(Graph &graph, set<Number> vertices){
                 return possibleResult;
         }
     }
-    //return NULL;
+    return vertices;
 }
 
 //this is not actualy tree decomposition, but path decomposition of a tree
 //we have to know from what vertex did we come from. that is the purpose of "from"
 vector<set<Number>> treeDecomposition(Graph &graph, set<Number> treeVertices, Number vertex, Number from){
-    vector<set<Number>> decomposition;
+    vector<set<Number>> decomposition, subdecomposition;
     int numOfNeighbors = 0;
     for (auto &inc: graph[vertex]){
+        //if neighbor is from treeVertices and is not a parent
         if ((treeVertices.find(inc.n2())!=treeVertices.end())&&(from.to_int()!=inc.n2().to_int())){
             numOfNeighbors++;
-            decomposition = treeDecomposition(graph, treeVertices, inc.n2(), vertex);
+            subdecomposition = treeDecomposition(graph, treeVertices, inc.n2(), vertex);
+            for (auto &bag: subdecomposition)
+                decomposition.push_back(bag);
         }
     }
     if (numOfNeighbors==0){
         set<Number> bag;
-        bag.insert(vertex);
         decomposition.push_back(bag);
     }
     for (auto &bag: decomposition)
@@ -65,9 +67,22 @@ vector<set<Number>> treeDecomposition(Graph &graph, set<Number> treeVertices, Nu
 //TODO: function will reduce components, i.e. bags which are subsets of neighbor bags will be removed
 // we will get value of pathwidth
 int reduceDecomposition(vector<set<Number>> &decomposition){
+    int decSize = decomposition.size(), pathWidth = 0;
+    for (int i = 0; i<decSize-1; i++) {
+        if (decomposition[i].size()>pathWidth)
+            pathWidth = decomposition[i].size();
+        if (includes(decomposition[i].begin(),decomposition[i].end(),decomposition[i+1].begin(),decomposition[i+1].end())){
+            decomposition.erase(decomposition.begin()+i+1);
+            decSize--;
+            i--; //after removing element we want to compare it again with new neighbors
+        } else if (includes(decomposition[i+1].begin(),decomposition[i+1].end(),decomposition[i].begin(),decomposition[i].end())){
+            decomposition.erase(decomposition.begin()+i);
+            decSize--;
+            i--;
+        }
+    }
 
-
-    return 0;
+    return pathWidth-1;
 }
 
 vector<set<Number>> getMiddleDecomposition(Graph &graph, vector<set<Number>> &decomposition, set<Number> &v0Vertices,
@@ -107,7 +122,6 @@ vector<set<Number>> makeDecomposition(Graph &graph, vector<set<Number>> &decompo
     int setSize = currentSet.size();
     if (setSize>0) {
         decomposition.push_back(currentSet);
-        bool case3possible = true; // case 3 is possible if every vertex in currentSet has at least 2 neighbors outside
         for (auto &n: currentSet) {
             int neighborsOutside = 0;
             for (auto &n2: graph[n])//we count number of neighbors of n outside currentSet
@@ -115,7 +129,6 @@ vector<set<Number>> makeDecomposition(Graph &graph, vector<set<Number>> &decompo
                 (verticesToDecompose.find(n2.n2()) != verticesToDecompose.end()))
                     neighborsOutside++;
             if (neighborsOutside == 0) { // case 1
-                case3possible = false;
                 verticesToDecompose.erase(n);
                 set<Number> newSet;
                 for (auto &v: currentSet)
@@ -124,7 +137,6 @@ vector<set<Number>> makeDecomposition(Graph &graph, vector<set<Number>> &decompo
                 decomposition = makeDecomposition(graph, decomposition, newSet, verticesToDecompose);
                 return decomposition;
             } else if (neighborsOutside == 1){ // case 2
-                case3possible = false;
                 Number neighbor;
                 for (auto &n2: graph[n])//we count number of neighbors of n outside currentSet
                     if ((currentSet.find(n2.n2()) == currentSet.end()) &&
@@ -141,37 +153,36 @@ vector<set<Number>> makeDecomposition(Graph &graph, vector<set<Number>> &decompo
                 return decomposition;
             }
         }
-        if (case3possible){ // case 3
-            int graphSize = graph.order();
-            if (setSize >= graphSize / 3 + 1){ // case 3.A ... graphSize/3 rounded down
-                set<Number> vertices;
-                for (auto &n: verticesToDecompose)
-                    if (currentSet.find(n)==currentSet.end())
-                        vertices.insert(n);
-                set<Number> treeComponent = getTreeComponent(graph, vertices);
-                vector<set<Number>> treeBags = treeDecomposition(graph, treeComponent, treeComponent.begin().operator*(),
-                        currentSet.begin().operator*());
-                for (auto &bag: treeBags) {
-                    for (auto &n: currentSet)
-                        bag.insert(n);
-                    decomposition.push_back(bag);
+        // case 3
+        int graphSize = graph.order();
+        if (setSize >= graphSize / 3 + 1){ // case 3.A ... graphSize/3 rounded down
+            set<Number> vertices;
+            for (auto &n: verticesToDecompose)
+                if (currentSet.find(n)==currentSet.end())
+                    vertices.insert(n);
+            set<Number> treeComponent = getTreeComponent(graph, vertices);
+            vector<set<Number>> treeBags = treeDecomposition(graph, treeComponent, treeComponent.begin().operator*(),
+                    currentSet.begin().operator*());
+            for (auto &bag: treeBags) {
+                for (auto &n: currentSet)
+                    bag.insert(n);
+                decomposition.push_back(bag);
+            }
+            //cout<<"WARNING: is this working properly???";
+        } else { // case 3.B ... setSize < graphSize/3 +1
+            set<Number> verticesToRemove;
+            for (auto &n: verticesToDecompose)
+                if (currentSet.find(n)==currentSet.end()) {
+                    currentSet.insert(n);
+                    verticesToRemove.insert(n);
+                    setSize = currentSet.size();
+                    if (setSize >= graphSize / 3 + 1)
+                        break;
                 }
-                //cout<<"WARNING: is this working properly???";
-            } else { // case 3.B ... setSize < graphSize/3 +1
-                set<Number> verticesToRemove;
-                for (auto &n: verticesToDecompose)
-                    if (currentSet.find(n)==currentSet.end()) {
-                        currentSet.insert(n);
-                        verticesToRemove.insert(n);
-                        setSize = currentSet.size();
-                        if (setSize >= graphSize / 3 + 1)
-                            break;
-                    }
 //                for (auto &n: verticesToRemove)
 //                    verticesToDecompose.erase(n);
-                decomposition = makeDecomposition(graph, decomposition, currentSet, verticesToDecompose);
-                    return decomposition;
-            }
+            decomposition = makeDecomposition(graph, decomposition, currentSet, verticesToDecompose);
+                return decomposition;
         }
         return decomposition;
     } else //if (setSize==1){

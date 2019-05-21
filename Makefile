@@ -14,7 +14,3 @@ compile_release:
 	$(COMPILE_RELEASE) main.cpp -o main.exe
 
 .PHONY: compile_debug_run compile_debug compile_release
-	
-
-
-

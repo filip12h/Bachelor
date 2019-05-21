@@ -8,7 +8,7 @@ set(CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
-set(SOURCE_FILES main.cpp redBlackEdges.cpp redBlackEdges.h test_redBlackEdges.cpp)
+set(SOURCE_FILES main.cpp redBlackEdges.cpp redBlackEdges.h oneHelpfulSet.cpp cutSizeBisection.cpp pathDecomposition.cpp)
 
 add_library(BAgraph ${SOURCE_FILES})
 
@@ -16,6 +16,7 @@ INCLUDE_DIRECTORIES(C:/Users/Karol/ClionProjects/BAgraph/BAgraph/include)
 LINK_DIRECTORIES(C:/Users/Karol/ClionProjects/BAgraph/BAgraph/include)
 add_executable(Bachelor main.cpp)
 TARGET_LINK_LIBRARIES(BAgraph algorithms.hpp graphs.hpp invariants.hpp io.hpp lib.hpp multipoles.hpp operations.hpp random.hpp sat.hpp snarks.hpp util.hpp)
+
 
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG(-fconcepts SUPPORT_CONCEPTS)

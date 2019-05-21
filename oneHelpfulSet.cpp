@@ -6,7 +6,7 @@
 using namespace std;
 using namespace ba_graph;
 
-int helpfulnessOfSet(Graph &graph, set<Number> v0, set<Number> s, set<pair<Number, Number>> &cut){
+int helpfulnessOfSet(Graph &graph, set<Number> v0, set<Number> s, multiset<pair<Number, Number>> &cut){
     //there is cut consisting of edges pair<Number, Number> that divide vertices into V0, V1
     //suppose that set S is subset of V0, i is number of vertices connecting S and V1,
     //j is number of vertices connecting S and rest of V0, set Helpfulness is number i-j
@@ -23,7 +23,7 @@ int helpfulnessOfSet(Graph &graph, set<Number> v0, set<Number> s, set<pair<Numbe
     return i-j;
 }
 
-multiset<Number> getUnion(const multiset<Number>& a, const multiset<Number>& b)
+multiset<Number> getUnion(const multiset<Number> &a, const multiset<Number> &b)
 {
     multiset<Number> result = a;
     result.insert(b.begin(), b.end());
@@ -45,7 +45,7 @@ set<Number> find3ConnectedCVertices(map<Number, multiset<Number>> neighbors, set
     return result; //in this case the result is empty
 }
 
-set<Number> getCVertices(set<Number> v0, set<pair<Number, Number>> &cut){
+set<Number> getCVertices(set<Number> v0, multiset<pair<Number, Number>> &cut){
     //we find all vertices in v0 which are connected to cut edges
 
     set<Number> vertices;
@@ -85,103 +85,61 @@ set<Number> getEVertices(set<Number> &v0, set<Number> cVertices, set<Number> dVe
 
 map<Number, multiset<Number>> transformationType1(set<Number> &cVertices, set<Number> &d1Vertices, set<Number> &d2Vertices,
         set<Number> &d3Vertices, set<Number> &eVertices, map<Number, multiset<Number>> neighbors,
-        set<pair<pair<pair<Number, Number>, pair<Number, Number>>, pair<pair<Number, Number>, pair<Number, Number>>>>
+        vector<pair<pair<pair<Number, Number>, pair<Number, Number>>, pair<pair<Number, Number>, pair<Number, Number>>>>
                                              &executedTransformations){
-    bool notAllTransformationsYet = true;
-    while (notAllTransformationsYet) {
-        bool pleaseContinue = false;
-        for (auto &v: cVertices) {
-            bool doTransformation = false, notInBeta = true, ntacv = false, gamaInD1 = false, deltaInD1 = false;
-            //ntacv - not transformed adjecent C vertices, if it is true, I have to do another for loop
-            //notInBeta is true if n2 vertex is adjecent to alfa vertex, not to beta vertex
-            //gama belongs to D1 or D2, it is important when updating sets, same with delta in D1 or E
-            Number beta, gama, delta;
-            for (auto &n: neighbors[v]) {
-                if (cVertices.find(n) != cVertices.end()) {
-                    ntacv = true;
-                    for (auto &n2: neighbors[n]) {
-                        if ((d1Vertices.find(n2) != d1Vertices.end()) || (d2Vertices.find(n2) != d2Vertices.end())) {
-                            if (d1Vertices.find(n2) != d1Vertices.end()) gamaInD1 = true;
-                            for (auto &n3: neighbors[n2]) {
-                                if ((d1Vertices.find(n3) != d1Vertices.end()) ||
-                                    (eVertices.find(n3) != eVertices.end())) {
-                                    //alfa = v;
-                                    if (d1Vertices.find(n3) != d1Vertices.end()) deltaInD1 = true;
-                                    beta = n;
-                                    gama = n2;
-                                    delta = n3;
-                                    doTransformation = true;
-                                    ntacv = false;
-                                    notInBeta = false;
-                                }
-                                if (doTransformation) break;
-                            }
-                        }
-                        if (doTransformation) break;
-                    }
-                    if (notInBeta) {
-                        for (auto &n2: neighbors[v]) {
-                            if ((d1Vertices.find(n2) != d1Vertices.end()) || (d2Vertices.find(n2) != d2Vertices.end())){
-                                if (d1Vertices.find(n2) != d1Vertices.end()) gamaInD1 = true;
-                                for (auto &n3: neighbors[n2]) {
-                                    if ((d1Vertices.find(n3) != d1Vertices.end()) ||
-                                        (eVertices.find(n3) != eVertices.end())) {
-                                        //alfa = v;
-                                        if (d1Vertices.find(n3) != d1Vertices.end()) deltaInD1 = true;
-                                        beta = n;
-                                        gama = n2;
-                                        delta = n3;
-                                        doTransformation = true;
-                                        ntacv = false;
-                                    }
-                                    if (doTransformation) break;
-                                }
+
+    for (auto &v: cVertices) {
+        bool doTransformation = false, gamaInD1 = false, deltaInD1 = false;
+        //gama belongs to D1 or D2, it is important when updating sets, same with delta in D1 or E
+        Number beta, gama, delta;
+        for (auto &n: neighbors[v]) {
+            if (cVertices.find(n) != cVertices.end())
+                for (auto &n2: neighbors[n])
+                    if ((d1Vertices.find(n2) != d1Vertices.end()) || (d2Vertices.find(n2) != d2Vertices.end())) {
+                        if (d1Vertices.find(n2) != d1Vertices.end()) gamaInD1 = true;
+                        for (auto &n3: neighbors[n2]) {
+                            if ((d1Vertices.find(n3) != d1Vertices.end()) ||
+                                (eVertices.find(n3) != eVertices.end())) {
+                                //alfa = v;
+                                if (d1Vertices.find(n3) != d1Vertices.end()) deltaInD1 = true;
+                                beta = n;
+                                gama = n2;
+                                delta = n3;
+                                doTransformation = true;
                             }
                             if (doTransformation) break;
                         }
                     }
-                }
-                if (doTransformation) break;
-            }
-            if (doTransformation) {
-                neighbors[v].erase(beta);
-                neighbors[beta].erase(v);
-                neighbors[gama].erase(delta);
-                neighbors[delta].erase(gama);
-                if (notInBeta) {
-                    neighbors[beta].insert(gama);
-                    neighbors[gama].insert(beta);
-                    neighbors[v].insert(delta);
-                    neighbors[delta].insert(v);
-                    executedTransformations.insert(pair(pair(pair(beta,gama), pair(v,delta)), pair(pair(v,beta),
-                            pair(gama,delta))));
-                } else {
-                    neighbors[v].insert(gama);
-                    neighbors[gama].insert(v);
-                    neighbors[beta].insert(delta);
-                    neighbors[delta].insert(beta);
-                    executedTransformations.insert(pair(pair(pair(v,gama), pair(beta,delta)), pair(pair(v,beta),
-                            pair(gama,delta))));
-                }
-                //update d1, d2, d3, e sets
-                if (gamaInD1){
-                    d1Vertices.erase(gama);
-                    d2Vertices.insert(gama);
-                } else {
-                    d2Vertices.erase(gama);
-                    d3Vertices.insert(gama);
-                }
-                if (deltaInD1){
-                    d1Vertices.erase(delta);
-                    d2Vertices.insert(delta);
-                } else {
-                    eVertices.erase(delta);
-                    d1Vertices.insert(delta);
-                }
-            }
-            if (ntacv) pleaseContinue = true;
+                    if (doTransformation) break;
+            if (doTransformation) break;
         }
-        if (!pleaseContinue) notAllTransformationsYet = false;
+        if (doTransformation) {
+            neighbors[v].erase(beta);
+            neighbors[beta].erase(v);
+            neighbors[gama].erase(delta);
+            neighbors[delta].erase(gama);
+            neighbors[v].insert(gama);
+            neighbors[gama].insert(v);
+            neighbors[beta].insert(delta);
+            neighbors[delta].insert(beta);
+            executedTransformations.push_back(pair(pair(pair(v, gama), pair(beta, delta)), pair(pair(v, beta),
+                                                                                             pair(gama, delta))));
+            //update d1, d2, d3, e sets
+            if (gamaInD1) {
+                d1Vertices.erase(gama);
+                d2Vertices.insert(gama);
+            } else {
+                d2Vertices.erase(gama);
+                d3Vertices.insert(gama);
+            }
+            if (deltaInD1) {
+                d1Vertices.erase(delta);
+                d2Vertices.insert(delta);
+            } else {
+                eVertices.erase(delta);
+                d1Vertices.insert(delta);
+            }
+        }
     }
     //in this moment there shouldnt be any adjecent C vertices, but who knows...
 
@@ -191,7 +149,7 @@ map<Number, multiset<Number>> transformationType1(set<Number> &cVertices, set<Nu
 
 map<Number, multiset<Number>> transformationType2(set<Number> cVertices, set<Number> &d1Vertices, set<Number> &d2Vertices,
         set<Number> &d3Vertices, set<Number> &eVertices, map<Number, multiset<Number>> neighbors,
-        set<pair<pair<pair<Number, Number>, pair<Number, Number>>, pair<pair<Number, Number>, pair<Number, Number>>>>
+        vector<pair<pair<pair<Number, Number>, pair<Number, Number>>, pair<pair<Number, Number>, pair<Number, Number>>>>
                                              &executedTransformations){
 
     bool gamaInD1, deltaInD1, doTransformation;
@@ -200,7 +158,7 @@ map<Number, multiset<Number>> transformationType2(set<Number> cVertices, set<Num
     for (auto &n: d3Vertices)
         copyOfD3Vertices.insert(n);
     for (auto &v: d3Vertices){
-        gamaInD1 = false; deltaInD1 = false; doTransformation = false;
+        deltaInD1 = false; doTransformation = false;
         //we dont need to check if neighbor is already in previous neighbors, because "if" denies repeating of vertices
         for (auto &n: neighbors[v]){
             for (auto &n2: neighbors[n]){
@@ -230,11 +188,12 @@ map<Number, multiset<Number>> transformationType2(set<Number> cVertices, set<Num
             neighbors[gama].insert(v);
             neighbors[beta].insert(delta);
             neighbors[delta].insert(beta);
-            executedTransformations.insert(pair(pair(pair(v,gama), pair(beta,delta)), pair(pair(v,beta),
+            executedTransformations.push_back(pair(pair(pair(v,gama), pair(beta,delta)), pair(pair(v,beta),
                     pair(gama,delta))));
             //update d1, d2, d3, e sets
             copyOfD3Vertices.erase(v); //I cannot erase elements of d3Vertices in for loop of d3Vertices
             d2Vertices.insert(v);
+            //we dont need to check where is gamma, because it will stay in D1 or D2
             if (deltaInD1){
                 d1Vertices.erase(delta);
                 d2Vertices.insert(delta);
@@ -251,10 +210,11 @@ map<Number, multiset<Number>> transformationType2(set<Number> cVertices, set<Num
     return neighbors;
 }
 
+//lemma 2, see more in pdf file
 //simpleSteps is true when we check only directly catchable cases
-set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &f, bool simpleSteps){
+set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &f){
 
-    set<pair<Number, Number>> cut;
+    multiset<pair<Number, Number>> cut;
 
     for (auto &v: v0)
         for (auto &e: graph[v])
@@ -263,6 +223,7 @@ set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &
 
     set<Number> vertices;
 
+    //cutsize has to be larger to continue...
     if (cut.size() <= (1.0/3 + 2*epsilon)*v0.size())
         return vertices;
 
@@ -325,7 +286,7 @@ set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &
                         structureIsGood = false;
             }
             if (structureIsGood){
-                unordered_set<Number> goodStructure;
+                set<Number> goodStructure;
                 goodStructure.insert(neighborsOfCVertex[1]);
                 for (auto &n1: neighbors[neighborsOfCVertex[1]]) {
                     goodStructure.insert(n1);
@@ -348,7 +309,7 @@ set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &
                         structureIsGood = false;
             }
             if (structureIsGood){
-                unordered_set<Number> goodStructure;
+                set<Number> goodStructure;
                 goodStructure.insert(neighborsOfCVertex[0]);
                 for (auto &n1: neighbors[neighborsOfCVertex[0]]) {
                     goodStructure.insert(n1);
@@ -367,16 +328,11 @@ set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &
 
     }
 
-    if (simpleSteps){
-        possibleResult.clear();
-        return possibleResult;
-    }
-
     //every executed transformation includes 2 added vertices and 2 deleted vertices
     //at the first position there is couple of added edges, at the second position couple of deleted edges
-    set<pair<pair<pair<Number, Number>, pair<Number, Number>>, pair<pair<Number, Number>, pair<Number, Number>>>>
+    vector<pair<pair<pair<Number, Number>, pair<Number, Number>>, pair<pair<Number, Number>, pair<Number, Number>>>>
             executedTransformations1;
-    set<pair<pair<pair<Number, Number>, pair<Number, Number>>, pair<pair<Number, Number>, pair<Number, Number>>>>
+    vector<pair<pair<pair<Number, Number>, pair<Number, Number>>, pair<pair<Number, Number>, pair<Number, Number>>>>
             executedTransformations2;
 
     transformedNeighbors = transformationType1(cVertices, d1Vertices, d2Vertices, d3Vertices, eVertices, neighbors,
@@ -403,8 +359,8 @@ set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &
         addV(onlyBlackGraph, v);
     }
 
-    set<pair<Number, Number>> blackEdges;
-    set<pair<Number, Number>> redEdges;
+    multiset<pair<Number, Number>> blackEdges;
+    multiset<pair<Number, Number>> redEdges;
 
     //we add edges between D and E vertices to blackEdges, others are red
     for (auto &v: transformedNeighbors)
@@ -474,6 +430,7 @@ set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &
             if ((derivedSetS.find(n)==derivedSetS.end())&&(cVertices.find(n)!=cVertices.end()))
                 vertices.insert(n);
     }
+
 
     if (v0.size()-vertices.size() >= graph.order() / 3.0) {
         return vertices;
