@@ -1,20 +1,100 @@
 #include <iostream>
 #include "basic_impl.hpp"
 #include "io/print_nice.hpp"
+#include "random/random_graphs.hpp"
 #include <invariants.hpp>
 #include "cutSizeBisection.cpp"
 #include "pathDecomposition.cpp"
 #include <cmath>
+#include <map>
 
 using namespace ba_graph;
 using namespace std;
 
 int main(){
-
+    
     Factory f;
     /*
      * here are some examples of graphs
      */
+    Graph petersen(createG(f));
+    for(int i=0;i<10;i++)
+        addV(petersen, i, f);
+    addE(petersen, Loc( 0, 2), f);
+    addE(petersen, Loc( 0, 3), f);
+    addE(petersen, Loc( 0, 5), f);
+    addE(petersen, Loc( 1, 3), f);
+    addE(petersen, Loc( 1, 4), f);
+    addE(petersen, Loc( 1, 6), f);
+    addE(petersen, Loc( 2, 4), f);
+    addE(petersen, Loc( 2, 7), f);
+    addE(petersen, Loc( 3, 8), f);
+    addE(petersen, Loc( 4, 9), f);
+    addE(petersen, Loc( 5, 6), f);
+    addE(petersen, Loc( 5, 9), f);
+    addE(petersen, Loc( 6, 7), f);
+    addE(petersen, Loc( 7, 8), f);
+    addE(petersen, Loc( 8, 9), f);
+
+    Graph snarkJ9(createG(f));
+    for(int i=0;i<36;i++)
+        addV(snarkJ9, i, f);
+    addE(snarkJ9, Loc( 0, 1), f);
+    addE(snarkJ9, Loc( 0, 26), f);
+    addE(snarkJ9, Loc( 0, 27), f);
+    addE(snarkJ9, Loc( 1, 2), f);
+    addE(snarkJ9, Loc( 1, 23), f);
+    addE(snarkJ9, Loc( 2, 3), f);
+    addE(snarkJ9, Loc( 2, 7), f);
+    addE(snarkJ9, Loc( 3, 4), f);
+    addE(snarkJ9, Loc( 3, 28), f);
+    addE(snarkJ9, Loc( 4, 5), f);
+    addE(snarkJ9, Loc( 4, 26), f);
+    addE(snarkJ9, Loc( 5, 6), f);
+    addE(snarkJ9, Loc( 5, 10), f);
+    addE(snarkJ9, Loc( 6, 7), f);
+    addE(snarkJ9, Loc( 6, 29), f);
+    addE(snarkJ9, Loc( 7, 8), f);
+    addE(snarkJ9, Loc( 8, 9), f);
+    addE(snarkJ9, Loc( 8, 13), f);
+    addE(snarkJ9, Loc( 9, 10), f);
+    addE(snarkJ9, Loc( 9, 30), f);
+    addE(snarkJ9, Loc( 10, 11), f);
+    addE(snarkJ9, Loc( 11, 12), f);
+    addE(snarkJ9, Loc( 11, 16), f);
+    addE(snarkJ9, Loc( 12, 13), f);
+    addE(snarkJ9, Loc( 12, 31), f);
+    addE(snarkJ9, Loc( 13, 14), f);
+    addE(snarkJ9, Loc( 14, 15), f);
+    addE(snarkJ9, Loc( 14, 19), f);
+    addE(snarkJ9, Loc( 15, 16), f);
+    addE(snarkJ9, Loc( 15, 32), f);
+    addE(snarkJ9, Loc( 16, 17), f);
+    addE(snarkJ9, Loc( 17, 18), f);
+    addE(snarkJ9, Loc( 17, 22), f);
+    addE(snarkJ9, Loc( 18, 19), f);
+    addE(snarkJ9, Loc( 18, 33), f);
+    addE(snarkJ9, Loc( 19, 20), f);
+    addE(snarkJ9, Loc( 20, 21), f);
+    addE(snarkJ9, Loc( 20, 25), f);
+    addE(snarkJ9, Loc( 21, 22), f);
+    addE(snarkJ9, Loc( 21, 34), f);
+    addE(snarkJ9, Loc( 22, 23), f);
+    addE(snarkJ9, Loc( 23, 24), f);
+    addE(snarkJ9, Loc( 24, 25), f);
+    addE(snarkJ9, Loc( 24, 35), f);
+    addE(snarkJ9, Loc( 25, 26), f);
+    addE(snarkJ9, Loc( 27, 28), f);
+    addE(snarkJ9, Loc( 27, 35), f);
+    addE(snarkJ9, Loc( 28, 29), f);
+    addE(snarkJ9, Loc( 29, 30), f);
+    addE(snarkJ9, Loc( 30, 31), f);
+    addE(snarkJ9, Loc( 31, 32), f);
+    addE(snarkJ9, Loc( 32, 33), f);
+    addE(snarkJ9, Loc( 33, 34), f);
+    addE(snarkJ9, Loc( 34, 35), f);
+
+
     Graph g(createG(f));
     for(int i=0;i<32;i++)
         addV(g, i, f);
@@ -70,127 +150,127 @@ int main(){
     Graph myGraph(createG(f));
     for (int i = 0; i<16; i++)
         addV(myGraph, i, f);
-    addE(myGraph, Loc( 0,1 ));
-    addE(myGraph, Loc( 0,9 ));
-    addE(myGraph, Loc( 0,11 ));
-    addE(myGraph, Loc( 1,2 ));
-    addE(myGraph, Loc( 1,10 ));
-    addE(myGraph, Loc( 2,3 ));
-    addE(myGraph, Loc( 2,14 ));
-    addE(myGraph, Loc( 3,4 ));
-    addE(myGraph, Loc( 3,13 ));
-    addE(myGraph, Loc( 4,5 ));
-    addE(myGraph, Loc( 4,13 ));
-    addE(myGraph, Loc( 5,6 ));
-    addE(myGraph, Loc( 5,14 ));
-    addE(myGraph, Loc( 6,7 ));
-    addE(myGraph, Loc( 6,15 ));
-    addE(myGraph, Loc( 7,8 ));
-    addE(myGraph, Loc( 7,15 ));
-    addE(myGraph, Loc( 8,9 ));
-    addE(myGraph, Loc( 8,15 ));
-    addE(myGraph, Loc( 9,10 ));
-    addE(myGraph, Loc( 10,11 ));
-    addE(myGraph, Loc( 11,12 ));
-    addE(myGraph, Loc( 12,13 ));
-    addE(myGraph, Loc( 12,14 ));
+    addE(myGraph, Loc( 0,1 ), f);
+    addE(myGraph, Loc( 0,9 ), f);
+    addE(myGraph, Loc( 0,11 ), f);
+    addE(myGraph, Loc( 1,2 ), f);
+    addE(myGraph, Loc( 1,10 ), f);
+    addE(myGraph, Loc( 2,3 ), f);
+    addE(myGraph, Loc( 2,14 ), f);
+    addE(myGraph, Loc( 3,4 ), f);
+    addE(myGraph, Loc( 3,13 ), f);
+    addE(myGraph, Loc( 4,5 ), f);
+    addE(myGraph, Loc( 4,13 ), f);
+    addE(myGraph, Loc( 5,6 ), f);
+    addE(myGraph, Loc( 5,14 ), f);
+    addE(myGraph, Loc( 6,7 ), f);
+    addE(myGraph, Loc( 6,15 ), f);
+    addE(myGraph, Loc( 7,8 ), f);
+    addE(myGraph, Loc( 7,15 ), f);
+    addE(myGraph, Loc( 8,9 ), f);
+    addE(myGraph, Loc( 8,15 ), f);
+    addE(myGraph, Loc( 9,10 ), f);
+    addE(myGraph, Loc( 10,11 ), f);
+    addE(myGraph, Loc( 11,12 ), f);
+    addE(myGraph, Loc( 12,13 ), f);
+    addE(myGraph, Loc( 12,14 ), f);
 
     Graph symethricGraph(createG(f));
     for (int i=0; i<10; i++)
-        addV(symethricGraph, i);
-    addE(symethricGraph, Loc( 0,2 ));
-    addE(symethricGraph, Loc( 0,7 ));
-    addE(symethricGraph, Loc( 0,9 ));
-    addE(symethricGraph, Loc( 1,6 ));
-    addE(symethricGraph, Loc( 1,8 ));
-    addE(symethricGraph, Loc( 1,9 ));
-    addE(symethricGraph, Loc( 2,4 ));
-    addE(symethricGraph, Loc( 2,7 ));
-    addE(symethricGraph, Loc( 3,5 ));
-    addE(symethricGraph, Loc( 3,6 ));
-    addE(symethricGraph, Loc( 3,8 ));
-    addE(symethricGraph, Loc( 4,7 ));
-    addE(symethricGraph, Loc( 4,9 ));
-    addE(symethricGraph, Loc( 5,6 ));
-    addE(symethricGraph, Loc( 5,8 ));
+        addV(symethricGraph, i, f);
+    addE(symethricGraph, Loc( 0,2 ), f);
+    addE(symethricGraph, Loc( 0,7 ), f);
+    addE(symethricGraph, Loc( 0,9 ), f);
+    addE(symethricGraph, Loc( 1,6 ), f);
+    addE(symethricGraph, Loc( 1,8 ), f);
+    addE(symethricGraph, Loc( 1,9 ), f);
+    addE(symethricGraph, Loc( 2,4 ), f);
+    addE(symethricGraph, Loc( 2,7 ), f);
+    addE(symethricGraph, Loc( 3,5 ), f);
+    addE(symethricGraph, Loc( 3,6 ), f);
+    addE(symethricGraph, Loc( 3,8 ), f);
+    addE(symethricGraph, Loc( 4,7 ), f);
+    addE(symethricGraph, Loc( 4,9 ), f);
+    addE(symethricGraph, Loc( 5,6 ), f);
+    addE(symethricGraph, Loc( 5,8 ), f);
 
     Graph koliskaGraph(createG(f));
     for (int i=0; i<14; i++)
-        addV(koliskaGraph, i);
-    addE(koliskaGraph, Loc( 0,11 ));
-    addE(koliskaGraph, Loc( 0,12 ));
-    addE(koliskaGraph, Loc( 0,13 ));
-    addE(koliskaGraph, Loc( 1,7 ));
-    addE(koliskaGraph, Loc( 1,10 ));
-    addE(koliskaGraph, Loc( 1,12 ));
-    addE(koliskaGraph, Loc( 2,6 ));
-    addE(koliskaGraph, Loc( 2,8 ));
-    addE(koliskaGraph, Loc( 2,10 ));
-    addE(koliskaGraph, Loc( 3,11 ));
-    addE(koliskaGraph, Loc( 3,12 ));
-    addE(koliskaGraph, Loc( 3,13 ));
-    addE(koliskaGraph, Loc( 4,5 ));
-    addE(koliskaGraph, Loc( 4,6 ));
-    addE(koliskaGraph, Loc( 4,9 ));
-    addE(koliskaGraph, Loc( 5,7 ));
-    addE(koliskaGraph, Loc( 5,9 ));
-    addE(koliskaGraph, Loc( 6,8 ));
-    addE(koliskaGraph, Loc( 7,10 ));
-    addE(koliskaGraph, Loc( 8,9 ));
-    addE(koliskaGraph, Loc( 11,13 ));
+        addV(koliskaGraph, i, f);
+    addE(koliskaGraph, Loc( 0,11 ), f);
+    addE(koliskaGraph, Loc( 0,12 ), f);
+    addE(koliskaGraph, Loc( 0,13 ), f);
+    addE(koliskaGraph, Loc( 1,7 ), f);
+    addE(koliskaGraph, Loc( 1,10 ), f);
+    addE(koliskaGraph, Loc( 1,12 ), f);
+    addE(koliskaGraph, Loc( 2,6 ), f);
+    addE(koliskaGraph, Loc( 2,8 ), f);
+    addE(koliskaGraph, Loc( 2,10 ), f);
+    addE(koliskaGraph, Loc( 3,11 ), f);
+    addE(koliskaGraph, Loc( 3,12 ), f);
+    addE(koliskaGraph, Loc( 3,13 ), f);
+    addE(koliskaGraph, Loc( 4,5 ), f);
+    addE(koliskaGraph, Loc( 4,6 ), f);
+    addE(koliskaGraph, Loc( 4,9 ), f);
+    addE(koliskaGraph, Loc( 5,7 ), f);
+    addE(koliskaGraph, Loc( 5,9 ), f);
+    addE(koliskaGraph, Loc( 6,8 ), f);
+    addE(koliskaGraph, Loc( 7,10 ), f);
+    addE(koliskaGraph, Loc( 8,9 ), f);
+    addE(koliskaGraph, Loc( 11,13 ), f);
 
     Graph bigGraph(createG(f));
 
     for (int i=0; i<32; i++)
-        addV(bigGraph, i);
-    addE(bigGraph, Loc( 0,1 ));
-    addE(bigGraph, Loc( 0,15 ));
-    addE(bigGraph, Loc( 0,16 ));
-    addE(bigGraph, Loc( 1,2 ));
-    addE(bigGraph, Loc( 1,17 ));
-    addE(bigGraph, Loc( 2,3 ));
-    addE(bigGraph, Loc( 2,18 ));
-    addE(bigGraph, Loc( 3,4 ));
-    addE(bigGraph, Loc( 3,20 ));
-    addE(bigGraph, Loc( 4,5 ));
-    addE(bigGraph, Loc( 4,21 ));
-    addE(bigGraph, Loc( 5,6 ));
-    addE(bigGraph, Loc( 5,22 ));
-    addE(bigGraph, Loc( 6,7 ));
-    addE(bigGraph, Loc( 6,23 ));
-    addE(bigGraph, Loc( 7,8 ));
-    addE(bigGraph, Loc( 7,24 ));
-    addE(bigGraph, Loc( 8,9 ));
-    addE(bigGraph, Loc( 8,24 ));
-    addE(bigGraph, Loc( 9,10 ));
-    addE(bigGraph, Loc( 9,26 ));
-    addE(bigGraph, Loc( 10,11 ));
-    addE(bigGraph, Loc( 10,26 ));
-    addE(bigGraph, Loc( 11,12 ));
-    addE(bigGraph, Loc( 11,30 ));
-    addE(bigGraph, Loc( 12,13 ));
-    addE(bigGraph, Loc( 12,27 ));
-    addE(bigGraph, Loc( 13,14 ));
-    addE(bigGraph, Loc( 13,27 ));
-    addE(bigGraph, Loc( 14,15 ));
-    addE(bigGraph, Loc( 14,28 ));
-    addE(bigGraph, Loc( 15,16 ));
-    addE(bigGraph, Loc( 16,28 ));
-    addE(bigGraph, Loc( 17,18 ));
-    addE(bigGraph, Loc( 17,29 ));
-    addE(bigGraph, Loc( 18,29 ));
-    addE(bigGraph, Loc( 19,20 ));
-    addE(bigGraph, Loc( 19,27 ));
-    addE(bigGraph, Loc( 19,31 ));
-    addE(bigGraph, Loc( 20,21 ));
-    addE(bigGraph, Loc( 21,31 ));
-    addE(bigGraph, Loc( 22,23 ));
-    addE(bigGraph, Loc( 22,25 ));
-    addE(bigGraph, Loc( 23,25 ));
-    addE(bigGraph, Loc( 24,25 ));
-    addE(bigGraph, Loc( 26,30 ));
-    addE(bigGraph, Loc( 28,29 ));
-    addE(bigGraph, Loc( 30,31 ));
+        addV(bigGraph, i, f);
+    addE(bigGraph, Loc( 0,1 ), f);
+    addE(bigGraph, Loc( 0,15 ), f);
+    addE(bigGraph, Loc( 0,16 ), f);
+    addE(bigGraph, Loc( 1,2 ), f);
+    addE(bigGraph, Loc( 1,17 ), f);
+    addE(bigGraph, Loc( 2,3 ), f);
+    addE(bigGraph, Loc( 2,18 ), f);
+    addE(bigGraph, Loc( 3,4 ), f);
+    addE(bigGraph, Loc( 3,20 ), f);
+    addE(bigGraph, Loc( 4,5 ), f);
+    addE(bigGraph, Loc( 4,21 ), f);
+    addE(bigGraph, Loc( 5,6 ), f);
+    addE(bigGraph, Loc( 5,22 ), f);
+    addE(bigGraph, Loc( 6,7 ), f);
+    addE(bigGraph, Loc( 6,23 ), f);
+    addE(bigGraph, Loc( 7,8 ), f);
+    addE(bigGraph, Loc( 7,24 ), f);
+    addE(bigGraph, Loc( 8,9 ), f);
+    addE(bigGraph, Loc( 8,24 ), f);
+    addE(bigGraph, Loc( 9,10 ), f);
+    addE(bigGraph, Loc( 9,26 ), f);
+    addE(bigGraph, Loc( 10,11 ), f);
+    addE(bigGraph, Loc( 10,26 ), f);
+    addE(bigGraph, Loc( 11,12 ), f);
+    addE(bigGraph, Loc( 11,30 ), f);
+    addE(bigGraph, Loc( 12,13 ), f);
+    addE(bigGraph, Loc( 12,27 ), f);
+    addE(bigGraph, Loc( 13,14 ), f);
+    addE(bigGraph, Loc( 13,27 ), f);
+    addE(bigGraph, Loc( 14,15 ), f);
+    addE(bigGraph, Loc( 14,28 ), f);
+    addE(bigGraph, Loc( 15,16 ), f);
+    addE(bigGraph, Loc( 16,28 ), f);
+    addE(bigGraph, Loc( 17,18 ), f);
+    addE(bigGraph, Loc( 17,29 ), f);
+    addE(bigGraph, Loc( 18,29 ), f);
+    addE(bigGraph, Loc( 19,20 ), f);
+    addE(bigGraph, Loc( 19,27 ), f);
+    addE(bigGraph, Loc( 19,31 ), f);
+    addE(bigGraph, Loc( 20,21 ), f);
+    addE(bigGraph, Loc( 21,31 ), f);
+    addE(bigGraph, Loc( 22,23 ), f);
+    addE(bigGraph, Loc( 22,25 ), f);
+    addE(bigGraph, Loc( 23,25 ), f);
+    addE(bigGraph, Loc( 24,25 ), f);
+    addE(bigGraph, Loc( 26,30 ), f);
+    addE(bigGraph, Loc( 28,29 ), f);
+    addE(bigGraph, Loc( 30,31 ), f);
 
     string answer;
     cout<<"Do you want to use graph from command line? (y/n)";
@@ -214,7 +294,7 @@ int main(){
         }
     } else {
         cout<<"make sure you have set your graph configuration in main.cpp\n";
-        cout<<"graph has to be 3-regular and its name must replace \"graph\" in rows under 4 \"TODO\"'s in main.cpp\n";
+        cout<<"graph has to be 3-regular and its name must be under \"TODO\" row in main.cpp\n";
         cout<<"for start path decomposition, type any symbol and push enter\n";
         cin>>answer;
     }
@@ -224,14 +304,18 @@ int main(){
     //bisectionSet is in ((a, b), (c, d)) format, where b is V0, d is V1 and a(c) are C-vertices in V0(V1)
     long long int bisectionWidth = INT64_MAX;
     pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> bisectionSet;
+
+    //TODO: under this line set the graph you want to use. For example: Graph graph_calculate = std::move(bigGraph);
+    // Graph graph_calculate = random_regular_multigraph(100, 3, f);
+
+    Graph graph_calculate = random_regular_multigraph(200, 3, f);
+
     while (true) {
-        //TODO: set name of your graph as parameter of getGoodBisection
         pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>>
-                candidateBisection = getGoodBisection(graph, epsilon, f);
-        if (getCutsize(bigGraph, candidateBisection.first.second, candidateBisection.second.second)<bisectionWidth){
+                candidateBisection = getGoodBisection(graph_calculate, epsilon, f);
+        if (getCutsize(graph_calculate, candidateBisection.first.second, candidateBisection.second.second)<bisectionWidth){
             bisectionSet = candidateBisection;
-            //TODO: set name of your graph as parameter of getCutSize
-            bisectionWidth = getCutsize(graph, candidateBisection.first.second, candidateBisection.second.second);
+            bisectionWidth = getCutsize(graph_calculate, candidateBisection.first.second, candidateBisection.second.second);
             //bisectionWidth = max(candidateBisection.first.first.size(), candidateBisection.second.first.size());
         } else {
             //long double limit = (1.0/(pow(graph.order(), 3)));
@@ -248,20 +332,18 @@ int main(){
 
     Graph v0Graph(createG(f));
     for (auto &n:bisectionSet.first.second)
-        addV(v0Graph, n);
+        addV(v0Graph, n, f);
     for (auto &n:bisectionSet.first.second)
-        //TODO: set your graph's name in for auto loop. for example: yourGraph[n]
-        for (auto &n2: graph[n])
+        for (auto &n2: graph_calculate[n])
             if ((n.to_int()<n2.n2().to_int())&&(bisectionSet.first.second.find(n2.n2())!=bisectionSet.first.second.end()))
-                addE(v0Graph, Loc(n, n2.n2()));
+                addE(v0Graph, Loc(n, n2.n2()), f);
     Graph v1Graph(createG(f));
     for (auto &n:bisectionSet.second.second)
-        addV(v1Graph, n);
+        addV(v1Graph, n, f);
     for (auto &n:bisectionSet.second.second)
-        //TODO: set your graph's name in for auto loop
-        for (auto &n2: graph[n])
+        for (auto &n2: graph_calculate[n])
             if ((n.to_int()<n2.n2().to_int())&&(bisectionSet.second.second.find(n2.n2())!=bisectionSet.second.second.end()))
-                addE(v1Graph, Loc(n, n2.n2()));
+                addE(v1Graph, Loc(n, n2.n2()), f);
 
     vector<set<Number>> v0Decomposition;
     makeDecomposition(v0Graph, v0Decomposition, bisectionSet.first.first, bisectionSet.first.second);
@@ -269,8 +351,7 @@ int main(){
     makeDecomposition(v1Graph, v1Decomposition, bisectionSet.second.first, bisectionSet.second.second);
 
     vector<set<Number>> middleDecomposition;
-    //TODO: you have to set your graph as parameter to getMiddleDecomposition
-    middleDecomposition = getMiddleDecomposition(graph, middleDecomposition, bisectionSet.first.first,
+    middleDecomposition = getMiddleDecomposition(graph_calculate, middleDecomposition, bisectionSet.first.first,
             bisectionSet.second.first);
 
     vector<set<Number>> decomposition;
@@ -280,21 +361,49 @@ int main(){
 
     //cout<<decomposition<<"\n";
 
-    int pathWidth = reduceDecomposition(decomposition);
+    int sizeOfDecomposition = reduceDecomposition(decomposition);
 
-    cout<<"This graph's pathwidth is: "<<pathWidth<<"\n\n";
+    cout<<"Size of the path decomposition is: "<<sizeOfDecomposition<<"\n\n";
     cout<<decomposition<<"\n";
 
 
-
-//    cout<<"Do you want to test if decomposition went good or wrong? (Y/N)"
-//    char answer;
-//    cin>>answer;
-//    if (answer == "Y"){
-//
-//    } else {
-//
-//    }
-
-    //test if decomposition is working well
+    cout<<"Do you want to test if decomposition went good or wrong? (y/n)";
+    cin>>answer;
+    if (answer == "y") {
+        //test if decomposition is working well.....but test is itself BAD... :-(
+        /*
+         * first phase
+         */
+        bool goodDecomposition = true;
+        //every edge is unchecked at the beginning, we caount number of checked edges
+        int num_of_checked = 0;
+        map<int,bool>checked;
+        for (auto &rot:graph_calculate)
+            for (auto &edge:rot)
+                checked[edge.e().to_int()] = false;
+        //we check every bag. in bag for every vertex we search for its neighbor in certain bag, then we check edge
+        for (auto &bag: decomposition)
+            for (auto &v: bag){
+                for(auto &neighbor: graph_calculate[v]){
+                    if ((bag.find(neighbor.n2())!=bag.end())&&(!checked[neighbor.e().to_int()])){ //not sure what numbers edges have
+                        checked[neighbor.e().to_int()] = true;
+                        num_of_checked++;
+                    }
+                }
+            }
+        if (num_of_checked!=graph_calculate.size()) goodDecomposition = false;
+        /*
+         * second phase
+         */
+        for (auto &rot: graph_calculate){
+            int q = 0;
+            for (auto &bag: decomposition){
+                if ((bag.find(rot.n())!=bag.end())&&(q==0)) q++;
+                else if ((bag.find(rot.n())==bag.end())&&(q==1)) q++;
+                else if ((bag.find(rot.n())!=bag.end())&&(q==2)) goodDecomposition = false;
+            }
+        }
+        if (goodDecomposition) cout<<"Decomposition is GOOD";
+        else cout<<"Decomposition is NOT GOOD";
+    }
 }

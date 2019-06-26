@@ -168,6 +168,10 @@ vector<set<Number>> makeDecomposition(Graph &graph, vector<set<Number>> &decompo
                     bag.insert(n);
                 decomposition.push_back(bag);
             }
+            for (auto &n: treeComponent)
+                verticesToDecompose.erase(n);
+            decomposition = makeDecomposition(graph, decomposition, currentSet, verticesToDecompose);
+            return decomposition;
             //cout<<"WARNING: is this working properly???";
         } else { // case 3.B ... setSize < graphSize/3 +1
             set<Number> verticesToRemove;
