@@ -432,7 +432,7 @@ set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &
     }
 
 
-    if (v0.size()-vertices.size() >= graph.order() / 3.0) {
+    if (v0.size()-vertices.size() + 5 >= 2 * graph.order() / 5.0) {
         return vertices;
     } else {
         vertices.clear();

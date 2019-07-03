@@ -1,5 +1,7 @@
 #include <iostream>
 #include "basic_impl.hpp"
+#include "cutSizeBisection.cpp"
+#include "io/print_nice.hpp"
 
 using namespace std;
 using namespace ba_graph;
@@ -43,12 +45,12 @@ set<Number> getTreeComponent(Graph &graph, set<Number> vertices){
 
 //this is not actualy tree decomposition, but path decomposition of a tree
 //we have to know from what vertex did we come from. that is the purpose of "from"
-vector<set<Number>> treeDecomposition(Graph &graph, set<Number> treeVertices, Number vertex, Number from){
+vector<set<Number>> treeDecomposition(Graph &graph, set<Number> treeVertices, Number vertex, Number parent){
     vector<set<Number>> decomposition, subdecomposition;
     int numOfNeighbors = 0;
     for (auto &inc: graph[vertex]){
         //if neighbor is from treeVertices and is not a parent
-        if ((treeVertices.find(inc.n2())!=treeVertices.end())&&(from.to_int()!=inc.n2().to_int())){
+        if ((treeVertices.find(inc.n2())!=treeVertices.end())&&(parent.to_int()!=inc.n2().to_int())){
             numOfNeighbors++;
             subdecomposition = treeDecomposition(graph, treeVertices, inc.n2(), vertex);
             for (auto &bag: subdecomposition)
@@ -64,7 +66,7 @@ vector<set<Number>> treeDecomposition(Graph &graph, set<Number> treeVertices, Nu
     return decomposition;
 }
 
-//TODO: function will reduce components, i.e. bags which are subsets of neighbor bags will be removed
+//function will reduce components, i.e. bags which are subsets of neighbor bags will be removed
 // we will get value of pathwidth
 int reduceDecomposition(vector<set<Number>> &decomposition){
     int decSize = decomposition.size(), pathWidth = 0;
@@ -154,7 +156,7 @@ vector<set<Number>> makeDecomposition(Graph &graph, vector<set<Number>> &decompo
             }
         }
         // case 3
-        int graphSize = graph.order();
+        int graphSize = verticesToDecompose.size();
         if (setSize >= graphSize / 3 + 1){ // case 3.A ... graphSize/3 rounded down
             set<Number> vertices;
             for (auto &n: verticesToDecompose)
@@ -172,23 +174,124 @@ vector<set<Number>> makeDecomposition(Graph &graph, vector<set<Number>> &decompo
                 verticesToDecompose.erase(n);
             decomposition = makeDecomposition(graph, decomposition, currentSet, verticesToDecompose);
             return decomposition;
-            //cout<<"WARNING: is this working properly???";
         } else { // case 3.B ... setSize < graphSize/3 +1
-            set<Number> verticesToRemove;
-            for (auto &n: verticesToDecompose)
-                if (currentSet.find(n)==currentSet.end()) {
-                    currentSet.insert(n);
-                    verticesToRemove.insert(n);
-                    setSize = currentSet.size();
-                    if (setSize >= graphSize / 3 + 1)
+            bool addedVertex = false;
+            for (auto &n: currentSet) {
+                for (auto &inc: graph[n]) {
+                    if (currentSet.find(inc.n2()) == currentSet.end()) {
+                        currentSet.insert(inc.n2());
+                        addedVertex = true;
                         break;
+                    }
                 }
-//                for (auto &n: verticesToRemove)
-//                    verticesToDecompose.erase(n);
+                if (addedVertex) break;
+            }
             decomposition = makeDecomposition(graph, decomposition, currentSet, verticesToDecompose);
                 return decomposition;
         }
-        return decomposition;
+        //return decomposition;
     } else //if (setSize==1){
         return decomposition;
+}
+
+vector<set<Number>> pathDecomposition(Graph &graph_calculate, Factory &f, float epsilonLimit){
+    float epsilon = 1.0/2;
+
+    //bisectionSet is in ((a, b), (c, d)) format, where b is V0, d is V1 and a(c) are C-vertices in V0(V1)
+    long long int bisectionWidth = INT64_MAX;
+    pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> bisectionSet;
+
+    while (true) {
+        pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>>
+                candidateBisection = getGoodBisection(graph_calculate, epsilon, f);
+        if (getCutsize(graph_calculate, candidateBisection.first.second, candidateBisection.second.second)<bisectionWidth){
+            bisectionSet = candidateBisection;
+            bisectionWidth = getCutsize(graph_calculate, candidateBisection.first.second, candidateBisection.second.second);
+            //bisectionWidth = max(candidateBisection.first.first.size(), candidateBisection.second.first.size());
+        } else {
+            //long double limit = (1.0/(pow(graph.order(), 3)));
+            //this^ was considered as very low number for some larger graphs
+            if (epsilon<epsilonLimit) //every time I get here, it takes epsilon constant steps to det here
+                //in case of smaller graphs, we can increse value of limit, which epsilon has to undergo
+                break;
+        }
+        //to achive possibly better bisection we decrease epsilon
+        epsilon /= 2;
+    }
+
+    //cout<<bisectionSet<<"\n\n";
+
+    Graph v0Graph(createG(f));
+    for (auto &n:bisectionSet.first.second)
+        addV(v0Graph, n, f);
+    for (auto &n:bisectionSet.first.second)
+        for (auto &n2: graph_calculate[n])
+            if ((n.to_int()<n2.n2().to_int())&&(bisectionSet.first.second.find(n2.n2())!=bisectionSet.first.second.end()))
+                addE(v0Graph, Loc(n, n2.n2()), f);
+    Graph v1Graph(createG(f));
+    for (auto &n:bisectionSet.second.second)
+        addV(v1Graph, n, f);
+    for (auto &n:bisectionSet.second.second)
+        for (auto &n2: graph_calculate[n])
+            if ((n.to_int()<n2.n2().to_int())&&(bisectionSet.second.second.find(n2.n2())!=bisectionSet.second.second.end()))
+                addE(v1Graph, Loc(n, n2.n2()), f);
+
+    vector<set<Number>> v0Decomposition;
+    makeDecomposition(v0Graph, v0Decomposition, bisectionSet.first.first, bisectionSet.first.second);
+    vector<set<Number>> v1Decomposition;
+    makeDecomposition(v1Graph, v1Decomposition, bisectionSet.second.first, bisectionSet.second.second);
+
+    vector<set<Number>> middleDecomposition;
+    middleDecomposition = getMiddleDecomposition(graph_calculate, middleDecomposition, bisectionSet.first.first,
+                                                 bisectionSet.second.first);
+
+    vector<set<Number>> decomposition;
+    decomposition.insert(decomposition.end(), v0Decomposition.rbegin(), v0Decomposition.rend());
+    decomposition.insert(decomposition.end(), middleDecomposition.begin(), middleDecomposition.end());
+    decomposition.insert(decomposition.end(), v1Decomposition.begin(), v1Decomposition.end());
+
+    //cout<<decomposition<<"\n";
+
+    int sizeOfDecomposition = reduceDecomposition(decomposition);
+
+    cout<<"Size of the path decomposition is: "<<sizeOfDecomposition<<"\n\n";
+    cout<<decomposition<<"\n";
+
+    return decomposition;
+}
+
+bool decompositionTest(Graph &graph_calculate, vector<set<Number>> decomposition){
+    /*
+     * first phase
+     */
+    bool goodDecomposition = true;
+    //every edge is unchecked at the beginning, we caount number of checked edges
+    int num_of_checked = 0;
+    map<int,bool>checked;
+    for (auto &rot:graph_calculate)
+        for (auto &edge:rot)
+            checked[edge.e().to_int()] = false;
+    //we check every bag. in bag for every vertex we search for its neighbor in certain bag, then we check edge
+    for (auto &bag: decomposition)
+        for (auto &v: bag){
+            for(auto &neighbor: graph_calculate[v]){
+                if ((bag.find(neighbor.n2())!=bag.end())&&(!checked[neighbor.e().to_int()])){ //not sure what numbers edges have
+                    checked[neighbor.e().to_int()] = true;
+                    num_of_checked++;
+                }
+            }
+        }
+    if (num_of_checked!=graph_calculate.size()) goodDecomposition = false;
+    /*
+     * second phase
+     */
+    for (auto &rot: graph_calculate){
+        int q = 0;
+        for (auto &bag: decomposition){
+            if ((bag.find(rot.n())!=bag.end())&&(q==0)) q++;
+            else if ((bag.find(rot.n())==bag.end())&&(q==1)) q++;
+            else if ((bag.find(rot.n())!=bag.end())&&(q==2)) goodDecomposition = false;
+        }
+    }
+    return goodDecomposition;
 }

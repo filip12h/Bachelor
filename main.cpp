@@ -3,7 +3,6 @@
 #include "io/print_nice.hpp"
 #include "random/random_graphs.hpp"
 #include <invariants.hpp>
-#include "cutSizeBisection.cpp"
 #include "pathDecomposition.cpp"
 #include <cmath>
 #include <map>
@@ -295,115 +294,24 @@ int main(){
     } else {
         cout<<"make sure you have set your graph configuration in main.cpp\n";
         cout<<"graph has to be 3-regular and its name must be under \"TODO\" row in main.cpp\n";
-        cout<<"for start path decomposition, type any symbol and push enter\n";
-        cin>>answer;
     }
-
-    float epsilon = 1;
-
-    //bisectionSet is in ((a, b), (c, d)) format, where b is V0, d is V1 and a(c) are C-vertices in V0(V1)
-    long long int bisectionWidth = INT64_MAX;
-    pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> bisectionSet;
-
+    cout<<"for start path decomposition, set the goodness (and slowness) of algorithm\n";
+    cout<<"type integer from 1 (faster, less precise) to 15 (slower, but precise)";
+    int epsilonExp;
+    cin>>epsilonExp;
+    assert((epsilonExp<=15)&&(epsilonExp>=1));
+    float epsilonLimit = pow(0.1, epsilonExp);
     //TODO: under this line set the graph you want to use. For example: Graph graph_calculate = std::move(bigGraph);
     // Graph graph_calculate = random_regular_multigraph(100, 3, f);
 
-    Graph graph_calculate = random_regular_multigraph(200, 3, f);
+    Graph graph_calculate = random_regular_multigraph(100, 3, f);
 
-    while (true) {
-        pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>>
-                candidateBisection = getGoodBisection(graph_calculate, epsilon, f);
-        if (getCutsize(graph_calculate, candidateBisection.first.second, candidateBisection.second.second)<bisectionWidth){
-            bisectionSet = candidateBisection;
-            bisectionWidth = getCutsize(graph_calculate, candidateBisection.first.second, candidateBisection.second.second);
-            //bisectionWidth = max(candidateBisection.first.first.size(), candidateBisection.second.first.size());
-        } else {
-            //long double limit = (1.0/(pow(graph.order(), 3)));
-            //this^ was considered as very low number for some larger graphs
-            if (epsilon<0.0000000000001) //every time I get here, it takes epsilon constant steps to det here
-                //in case of smaller graphs, we can increse value of limit, which epsilon has to undergo
-                break;
-        }
-        //to achive possibly better bisection we decrease epsilon
-        epsilon /= 2;
-    }
-
-    //cout<<bisectionSet<<"\n\n";
-
-    Graph v0Graph(createG(f));
-    for (auto &n:bisectionSet.first.second)
-        addV(v0Graph, n, f);
-    for (auto &n:bisectionSet.first.second)
-        for (auto &n2: graph_calculate[n])
-            if ((n.to_int()<n2.n2().to_int())&&(bisectionSet.first.second.find(n2.n2())!=bisectionSet.first.second.end()))
-                addE(v0Graph, Loc(n, n2.n2()), f);
-    Graph v1Graph(createG(f));
-    for (auto &n:bisectionSet.second.second)
-        addV(v1Graph, n, f);
-    for (auto &n:bisectionSet.second.second)
-        for (auto &n2: graph_calculate[n])
-            if ((n.to_int()<n2.n2().to_int())&&(bisectionSet.second.second.find(n2.n2())!=bisectionSet.second.second.end()))
-                addE(v1Graph, Loc(n, n2.n2()), f);
-
-    vector<set<Number>> v0Decomposition;
-    makeDecomposition(v0Graph, v0Decomposition, bisectionSet.first.first, bisectionSet.first.second);
-    vector<set<Number>> v1Decomposition;
-    makeDecomposition(v1Graph, v1Decomposition, bisectionSet.second.first, bisectionSet.second.second);
-
-    vector<set<Number>> middleDecomposition;
-    middleDecomposition = getMiddleDecomposition(graph_calculate, middleDecomposition, bisectionSet.first.first,
-            bisectionSet.second.first);
-
-    vector<set<Number>> decomposition;
-    decomposition.insert(decomposition.end(), v0Decomposition.rbegin(), v0Decomposition.rend());
-    decomposition.insert(decomposition.end(), middleDecomposition.begin(), middleDecomposition.end());
-    decomposition.insert(decomposition.end(), v1Decomposition.begin(), v1Decomposition.end());
-
-    //cout<<decomposition<<"\n";
-
-    int sizeOfDecomposition = reduceDecomposition(decomposition);
-
-    cout<<"Size of the path decomposition is: "<<sizeOfDecomposition<<"\n\n";
-    cout<<decomposition<<"\n";
-
+    vector<set<Number>> decomposition = pathDecomposition(graph_calculate, f, epsilonLimit);
 
     cout<<"Do you want to test if decomposition went good or wrong? (y/n)";
     cin>>answer;
     if (answer == "y") {
-        //test if decomposition is working well.....but test is itself BAD... :-(
-        /*
-         * first phase
-         */
-        bool goodDecomposition = true;
-        //every edge is unchecked at the beginning, we caount number of checked edges
-        int num_of_checked = 0;
-        map<int,bool>checked;
-        for (auto &rot:graph_calculate)
-            for (auto &edge:rot)
-                checked[edge.e().to_int()] = false;
-        //we check every bag. in bag for every vertex we search for its neighbor in certain bag, then we check edge
-        for (auto &bag: decomposition)
-            for (auto &v: bag){
-                for(auto &neighbor: graph_calculate[v]){
-                    if ((bag.find(neighbor.n2())!=bag.end())&&(!checked[neighbor.e().to_int()])){ //not sure what numbers edges have
-                        checked[neighbor.e().to_int()] = true;
-                        num_of_checked++;
-                    }
-                }
-            }
-        if (num_of_checked!=graph_calculate.size()) goodDecomposition = false;
-        /*
-         * second phase
-         */
-        for (auto &rot: graph_calculate){
-            int q = 0;
-            for (auto &bag: decomposition){
-                if ((bag.find(rot.n())!=bag.end())&&(q==0)) q++;
-                else if ((bag.find(rot.n())==bag.end())&&(q==1)) q++;
-                else if ((bag.find(rot.n())!=bag.end())&&(q==2)) goodDecomposition = false;
-            }
-        }
-        if (goodDecomposition) cout<<"Decomposition is GOOD";
+        if (decompositionTest(graph_calculate, decomposition)) cout<<"Decomposition is GOOD";
         else cout<<"Decomposition is NOT GOOD";
     }
 }

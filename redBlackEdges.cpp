@@ -165,7 +165,7 @@ int isPositive(set<Number> vertices, Graph &g, multiset<pair<Number, Number>> bl
                 extBlackEdges++;
             else if (((blackEdges.find(pair(inc.n1(), inc.n2()))==blackEdges.end())
             &&(blackEdges.find(pair(inc.n2(), inc.n1()))==blackEdges.end()))&&
-            ((vertices.find(inc.n2())!=vertices.end())&&(inc.n1().to_int()<inc.n2().to_int())))//every edge count only once
+            ((vertices.find(inc.n2())!=vertices.end())&&(inc.n1().to_int()<=inc.n2().to_int())))//every edge count only once
                 intRedEdges++;
         }
     }
@@ -198,7 +198,7 @@ int alfa(set<Number> vertices, Graph &g, multiset<pair<Number, Number>> blackEdg
 }
 
 //union of vertices and small components to it via red edge
-//addOnlyOneSet is on when simple cases such that 2 small sets connected via red edge
+//addOnlyOneSet is true when simple cases such that 2 small sets connected via red edge
 set<Number> smallSetsViaRedEdge(set<Number> vertices, Graph &g, multiset<pair<Number, Number>> blackEdges, float epsilon,
                                 set<set<Number>> &connectedComponents, bool addOnlyOneSet) {
     set<Number> addedVertices;
@@ -910,6 +910,12 @@ set<Number> reducedGraph(Graph &graph, multiset<pair<Number, Number>> &blackEdge
 set<Number> redBlackEdges(Graph &g, multiset<pair<Number, Number>> &blackEdges, float epsilon, Graph &blackGraph, Factory &f) {
 
     set<set<Number>> blackComponentsFamily = connectedComponents(blackGraph);
+
+    for (auto &rot: g){
+        set<Number> vertex;
+        vertex.insert(rot.n());
+        if (isPositive(vertex, g, blackEdges)) return vertex;
+    }
 
     //some simple cases such that small positive set or 2 (or more) small sets connected via a red edge
     for (auto &comp: blackComponentsFamily){

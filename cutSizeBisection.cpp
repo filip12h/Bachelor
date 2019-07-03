@@ -28,27 +28,25 @@ pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>>
     while (v1.size()<v0.size()){
         //we cant change cut in for auto loop, so we have to mark which edges add and remove from cut.
         multiset<pair<Number, Number>> toErase, toAdd;
-        for (auto &e: cut){
-            if (v1.find(e.first)!=v1.end()){
-                v0.erase(e.second);
-                v1.insert(e.second);
-                for (auto &n: graph[e.second])
-                    if (v1.find(n.n2())!=v1.end()){
-                        toErase.insert(pair(n.n2(), e.second));
-                    } else {
-                        toAdd.insert(pair(n.n2(), e.second));
-                    }
-            } else {
-                v0.erase(e.first);
-                v1.insert(e.first);
-                for (auto &n: graph[e.first])
-                    if (v1.find(n.n2())!=v1.end()){
-                        toErase.insert(pair(n.n2(), e.first));
-                    } else {
-                        toAdd.insert(pair(n.n2(), e.first));
-                    }
-            }
-            break;
+        pair<Number, Number> e = cut.begin().operator*();
+        if (v1.find(e.first)!=v1.end()){
+            v0.erase(e.second);
+            v1.insert(e.second);
+            for (auto &n: graph[e.second])
+                if (v1.find(n.n2())!=v1.end()){
+                    toErase.insert(pair(n.n2(), e.second));
+                } else {
+                    toAdd.insert(pair(n.n2(), e.second));
+                }
+        } else {
+            v0.erase(e.first);
+            v1.insert(e.first);
+            for (auto &n: graph[e.first])
+                if (v1.find(n.n2())!=v1.end()){
+                    toErase.insert(pair(n.n2(), e.first));
+                } else {
+                    toAdd.insert(pair(n.n2(), e.first));
+                }
         }
         //update the cut
         for (auto &a: toAdd)
@@ -56,16 +54,11 @@ pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>>
         for (auto &r: toErase)
             cut.erase(pair(min(r.first, r.second), max(r.first, r.second)));
     }
-//    for (int i = graph.order()/2; i<graph.order(); i++)
-//        v1.insert(graph[i].n());
+
     //we move subsets of vertices between v0 and v1, from larger to smaller and we always decrease cutsize under
     // 1/6 + epsilon of vertices in graph
 
-    int cutsize = getCutsize(graph, v0, v1);
-    int cutsetDifference = graph.order()/2.0; //TODO: this might be variable parameter
-    float limit = (1.0/6 + epsilon)*graph.order();
-    int v0size = v0.size(), v1size = v1.size();
-    while ((abs(v1size-v0size)>=cutsetDifference)||(cutsize>limit)) {
+    while (true) {
         if (v1.size() > v0.size()) {
             set<Number> setToMove = getHelpfulSet(graph, v1, epsilon, f);
             if (setToMove.empty()) break; //if we havent found setToMove, end while cycle
@@ -75,54 +68,11 @@ pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>>
             }
         } else {
             set<Number> setToMove = getHelpfulSet(graph, v0, epsilon, f);
-            if (setToMove.empty()) break;//if we havent found setToMove, end while cycle
+            if (setToMove.empty()) break; //if we havent found setToMove, end while cycle
             for (auto &n: setToMove) {
                 v0.erase(n);
                 v1.insert(n);
             }
-        }
-        cutsize = getCutsize(graph, v0, v1);
-    }
-
-    //check some little moves
-//    while (true){
-//        if (v1.size() - v0.size() > 1) {
-//            set<Number> setToMove = getHelpfulSet(graph, v1, epsilon, f, true);
-//            if (helpfulnessOfSet(graph, v1, setToMove, cut) > 0) {
-//                for (auto &n: setToMove) {
-//                    v1.erase(n);
-//                    v0.insert(n);
-//                }
-//            } else break;
-//        } else {
-//            set<Number> setToMove = getHelpfulSet(graph, v1, epsilon, f, true);
-//            if (helpfulnessOfSet(graph, v0, setToMove, cut) > 0) {
-//                for (auto &n: setToMove) {
-//                    v0.erase(n);
-//                    v1.insert(n);
-//                }
-//            } else break;
-//        }
-//    }
-
-    //if it is possible to decrease size difference between sections v0 and v1, do it
-    while (true) {
-        if (v1.size() - v0.size() > 1) {
-            set<Number> setToMove = getHelpfulSet(graph, v1, epsilon, f);
-            if (helpfulnessOfSet(graph, v1, setToMove, cut) > 0) {
-                for (auto &n: setToMove) {
-                    v1.erase(n);
-                    v0.insert(n);
-                }
-            } else break;
-        } else {
-            set<Number> setToMove = getHelpfulSet(graph, v1, epsilon, f);
-            if (helpfulnessOfSet(graph, v0, setToMove, cut) > 0) {
-                for (auto &n: setToMove) {
-                    v0.erase(n);
-                    v1.insert(n);
-                }
-            } else break;
         }
     }
 
