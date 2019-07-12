@@ -42,7 +42,7 @@ node* insertRight(struct node *root, Number vertex){
     return root->right;
 }
 
-inline void DFS(Number n, map<Number, int> &visited, Graph &g, set<Number> &vertices) {
+void DFS(Number n, map<Number, int> &visited, Graph &g, set<Number> &vertices) {
     // mark vertex as visited and insert it to vertices(component)
     visited[n] = true;
     vertices.insert(n);
@@ -58,7 +58,7 @@ inline void DFS(Number n, map<Number, int> &visited, Graph &g, set<Number> &vert
     }
 }
 
-inline void DFS2(Number n, map<Number, int> &visited, Graph &graph,
+void DFS2(Number n, map<Number, int> &visited, Graph &graph,
         set<Number> g, set<Number> &vertices, map<Number, bool> &isRemoved){
     // mark vertex as visited and insert it to vertices(component)
     visited[n] = true;
@@ -73,7 +73,7 @@ inline void DFS2(Number n, map<Number, int> &visited, Graph &graph,
 }
 
 
-inline void DFS0(const Rotation &rot, map<Number, int> &visited, Graph &g, Factory &f, Graph &graph) {
+void DFS0(const Rotation &rot, map<Number, int> &visited, Graph &g, Factory &f, Graph &graph) {
     visited[rot.n()] = true;
     addV(graph, rot.n(), f);
     for (auto &inc: rot) {
@@ -413,7 +413,7 @@ map<pair<Number, Number>, set<Number>> edgeRef(Graph &graph, map<Number, bool> &
     return er;
 }
 
-inline void removeLine(Graph &g, set<Number> &graphToReduce, map<Number, bool> &isRemoved,
+void removeLine(Graph &g, set<Number> &graphToReduce, map<Number, bool> &isRemoved,
         const Number n, multiset<pair<Number, Number>> &blackEdges){
     if (!isRemoved[n]){
         int removedNeighbors = 0, numOfBlackEdges = 0;
@@ -487,20 +487,20 @@ node* createSubtree(Graph &graph, node* &root, set<Number> &vertices, multiset<p
     return root;
 }
 
-inline set<Number> getSubtreeVertices(node* root, set<Number> &subtreeVertices){
+set<Number> getSubtreeVertices(node* root, set<Number> &subtreeVertices){
     subtreeVertices.insert(root->vertex);
     if (root->left!=NULL) getSubtreeVertices(root->left, subtreeVertices);
     if (root->right!=NULL) getSubtreeVertices(root->right, subtreeVertices);
     return subtreeVertices;
 }
 
-inline bool isNodeInSubtree(Graph &graph, node* root, Number wanted){
+bool isNodeInSubtree(Graph &graph, node* root, Number wanted){
     if (wanted.to_int()==root->vertex.to_int()) return true;
     if (root==NULL) return false;
     return (isNodeInSubtree(graph, root->left, wanted)||(isNodeInSubtree(graph, root->right, wanted)));
 }
 
-inline void undesignateNodesAbove(node* root){
+void undesignateNodesAbove(node* root){
     while (root->parent!=NULL){
         root->parent->isDesignated=false;
         undesignateNodesAbove(root->parent);
@@ -523,14 +523,14 @@ void designateNodes(Graph &graph, node* root, multiset<pair<Number, Number>> &bl
 
 }
 
-inline set<node*> getDesignatedNodes(node* root, set<node*> &nodes){
+set<node*> getDesignatedNodes(node* root, set<node*> &nodes){
     if (root->isDesignated) nodes.insert(root);
     if (root->left!=NULL) getDesignatedNodes(root->left, nodes);
     if (root->right!=NULL) getDesignatedNodes(root->right, nodes);
     return nodes;
 }
 
-inline void insertParents(set<Number> &graphOfDesignatedVertices, node* currentNode){
+void insertParents(set<Number> &graphOfDesignatedVertices, node* currentNode){
     graphOfDesignatedVertices.insert(currentNode->vertex);
     if (currentNode->parent!=NULL)
         insertParents(graphOfDesignatedVertices, currentNode->parent);
@@ -543,7 +543,7 @@ set<Number> pathsAmongDesignatedVertices(set<node*> &nodes){
     return result;
 }
 
-inline void pathOfChildren(node* currentNode, set<Number> &path){
+void pathOfChildren(node* currentNode, set<Number> &path){
     if ((currentNode->left!=NULL)&&(currentNode->right==NULL)){
         path.insert(currentNode->vertex);
         pathOfChildren(currentNode->left, path);
@@ -584,7 +584,7 @@ set<set<Number>> getAllPaths(set<Number> &vertices, set<node*> &nodes){ //these 
     return setOfPaths;
 }
 
-inline set<node*> getAllChildren(node* root, set<node*> children){
+set<node*> getAllChildren(node* root, set<node*> children){
     children.insert(root);
     if (root->left!=NULL) getAllChildren(root->left, children);
     if (root->right!=NULL) getAllChildren(root->right, children);
@@ -655,7 +655,7 @@ set<set<Number>> p(Number &vertex, set<Number> &vertices, set<set<Number>> &setO
 
 }
 
-inline vector<Number> sortAlfaVertices(Graph &graph, set<Number> path, set<Number> alfaVertices, Number previous,
+vector<Number> sortAlfaVertices(Graph &graph, set<Number> path, set<Number> alfaVertices, Number previous,
         Number currentVertex, vector<Number> &sortedAlfaVertices) {
     if (alfaVertices.find(currentVertex)!=alfaVertices.end()){
         sortedAlfaVertices.push_back(currentVertex);
@@ -666,7 +666,7 @@ inline vector<Number> sortAlfaVertices(Graph &graph, set<Number> path, set<Numbe
     return sortedAlfaVertices;
 }
 
-inline vector<set<Number>> sortAlfaPaths(Graph &graph, set<Number> path, set<Number> alfaVertices, Number previous,
+vector<set<Number>> sortAlfaPaths(Graph &graph, set<Number> path, set<Number> alfaVertices, Number previous,
         Number currentVertex, set<Number> &currentPath, vector<set<Number>> &sortedAlfaPaths) {
     if (alfaVertices.find(currentVertex)==alfaVertices.end())
         currentPath.insert(currentVertex);
@@ -904,28 +904,28 @@ set<Number> reducedGraph(Graph &graph, multiset<pair<Number, Number>> &blackEdge
 /*
 * lemma 1, see more in pdf file
 */
-set<Number> redBlackEdges(Graph &g, multiset<pair<Number, Number>> &blackEdges, float epsilon, Graph &blackGraph, Factory &f) {
+set<Number> redBlackEdges(Graph &graph, multiset<pair<Number, Number>> &blackEdges, float epsilon, Graph &blackGraph, Factory &f) {
 
     set<set<Number>> blackComponentsFamily = connectedComponents(blackGraph);
 
-    for (auto &rot: g){
+    for (auto &rot: graph){
         set<Number> vertex;
         vertex.insert(rot.n());
-        if (isPositive(vertex, g, blackEdges)) return vertex;
+        if (isPositive(vertex, graph, blackEdges)) return vertex;
     }
 
     //some simple cases such that small positive set or 2 (or more) small sets connected via a red edge
     for (auto &comp: blackComponentsFamily){
         if (!isLarge(comp, epsilon)) {
-            if (isPositive(comp, g, blackEdges))
+            if (isPositive(comp, graph, blackEdges))
                 return comp;
-            else if (isPositive(smallSetsViaRedEdge(comp, g, blackEdges, epsilon, blackComponentsFamily, true), g,
+            else if (isPositive(smallSetsViaRedEdge(comp, graph, blackEdges, epsilon, blackComponentsFamily, true), graph,
                                 blackEdges))
-                return smallSetsViaRedEdge(comp, g, blackEdges, epsilon, blackComponentsFamily, true);
+                return smallSetsViaRedEdge(comp, graph, blackEdges, epsilon, blackComponentsFamily, true);
         }
     }
 
-    for (auto &rot: g)
+    for (auto &rot: graph)
         for (auto &inc: rot) //we check if there is vertex v such that there exists red edge from v to v
             if ((inc.n2().to_int() == rot.n().to_int())&&
                 (blackEdges.find(pair(rot.n().to_int(),rot.n().to_int()))==blackEdges.end())) {
@@ -935,13 +935,13 @@ set<Number> redBlackEdges(Graph &g, multiset<pair<Number, Number>> &blackEdges, 
             }
 
     map<Number, bool> isRemoved;
-    for (int i = 0; i<g.order(); i++)
+    for (int i = 0; i<graph.order(); i++)
         isRemoved[i] = false;
 
-    step1(g, blackEdges, epsilon, blackComponentsFamily, isRemoved);
+    step1(graph, blackEdges, epsilon, blackComponentsFamily, isRemoved);
 
-    step2(g, blackEdges, epsilon, blackComponentsFamily, isRemoved);
+    step2(graph, blackEdges, epsilon, blackComponentsFamily, isRemoved);
 
-    return reducedGraph(g, blackEdges, epsilon, isRemoved,
+    return reducedGraph(graph, blackEdges, epsilon, isRemoved,
             blackComponentsFamily, blackGraph, f);
 }

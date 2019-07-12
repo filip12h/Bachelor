@@ -7,7 +7,7 @@
 using namespace std;
 using namespace ba_graph;
 
-inline void DFS(Number n, map<Number, int> &visited, Graph &g, set<Number> &vertices, set<Number> &possibleResult) {
+void DFS(Number n, map<Number, int> &visited, Graph &g, set<Number> &vertices, set<Number> &possibleResult) {
     // oznac vrchol ako navstiveny a pridaj ho do komponentu
     visited[n] = true;
     possibleResult.insert(n);
@@ -46,7 +46,7 @@ set<Number> getTreeComponent(Graph &graph, set<Number> vertices){
 
 //this is not actualy tree decomposition, but path decomposition of a tree
 //we have to know from what vertex did we come from. that is the purpose of "from"
-inline vector<set<Number>> treeDecomposition(Graph &graph, set<Number> treeVertices, Number vertex, Number parent){
+vector<set<Number>> treeDecomposition(Graph &graph, set<Number> treeVertices, Number vertex, Number parent){
     vector<set<Number>> decomposition, subdecomposition;
     int numOfNeighbors = 0;
     for (auto &inc: graph[vertex]){
@@ -88,7 +88,7 @@ inline int reduceDecomposition(vector<set<Number>> &decomposition){
     return pathWidth-1;
 }
 
-inline vector<set<Number>> getMiddleDecomposition(Graph &graph, vector<set<Number>> &decomposition, set<Number> &v0Vertices,
+vector<set<Number>> getMiddleDecomposition(Graph &graph, vector<set<Number>> &decomposition, set<Number> &v0Vertices,
         set<Number> v1Vertices){
     set<Number> newBag;
     for (auto &n: v0Vertices)
@@ -233,7 +233,7 @@ inline bool decompositionTest(Graph &graph_calculate, vector<set<Number>> decomp
 
 vector<set<Number>> pathDecomposition(Graph &graph, Factory &f){
 
-    pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> bisectionSet = makeBisection(graph, f, false);
+    pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> bisectionSet = makeBisection(graph, f);
 
     //cout<<bisectionSet<<"\n\n";
 

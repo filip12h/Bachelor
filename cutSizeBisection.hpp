@@ -3,6 +3,16 @@
 #include "io/print_nice.hpp"
 //#include "basic_impl.hpp"
 
+inline int getCutSize(Graph &graph, set<Number> v0){
+    int cutsize = 0;
+    for (auto &n: v0){
+        for (auto &neighbor: graph[n])
+            if (v0.find(neighbor.n2())==v0.end())
+                cutsize++;
+    }
+    return cutsize;
+}
+
 inline int getCutsize(Graph &graph, set<Number> v0, set<Number> v1){
     int cutsize = 0;
     for (auto &n: v0){
@@ -89,7 +99,7 @@ pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>>
     return pair(pair(v0Vertices, v0), pair(v1Vertices, v1));
 }
 
-pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> makeBisection(Graph &graph, Factory &f, bool bisection){
+pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> makeBisection(Graph &graph, Factory &f){
     cout<<"before start of algorithm, set its precision (and slowness)\n";
     cout<<"type integer from 1 (faster, less precise) to 15 (slower, but precise)\n";
     int epsilonExp;
@@ -122,13 +132,6 @@ pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> makeBisecti
         }
         //to achive possibly better bisection we decrease epsilon
         epsilon /= 2;
-    }
-    if (bisection) {
-        cout << "Cut has been done. Its size is: "<<getCutsize(graph, bisectionSet.first.first, bisectionSet.second.first)<<
-            "\nVertices are divided into 2 sets - A and B.\nA cut vertices:("<< bisectionSet.first.first.size() << " elements)\n"
-             << bisectionSet.first.first << "\nB cut vertices:(" << bisectionSet.second.first.size() << " elements)\n"
-             << bisectionSet.second.first;
-        cout << "\nA elements:\n" << bisectionSet.first.second << "\nB elements:\n" << bisectionSet.second.second<<"\n";
     }
     return bisectionSet;
 }
