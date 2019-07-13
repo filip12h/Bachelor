@@ -8,9 +8,17 @@
 #include <map>
 #include <fstream>
 #include <dirent.h>
+#include <string>
+#include <windows.h>
 
 using namespace ba_graph;
 using namespace std;
+
+string getexepath()
+{
+    char result[ MAX_PATH ];
+    return std::string( result, GetModuleFileName( NULL, result, MAX_PATH ) );
+}
 
 int main(){
     
@@ -63,7 +71,7 @@ int main(){
 
                 cout << "Please enter a name of file to read from:\n";
                 cin >> filename;
-                filename = "./graph_examples/" + filename + ".txt";
+                filename = getexepath()+ "\\" + filename + ".txt";
                 file.open(filename);//.c_str() );
                 if (!file) {
                     cerr << "Unable to open file at path " + filename + "\n";

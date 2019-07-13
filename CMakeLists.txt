@@ -8,14 +8,14 @@ set(CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
-set(SOURCE_FILES main.cpp redBlackEdges.cpp redBlackEdges.h oneHelpfulSet.cpp cutSizeBisection.cpp pathDecomposition.cpp)
+set(SOURCE_FILES main.cpp redBlackEdges.hpp oneHelpfulSet.hpp cutSizeBisection.hpp pathDecomposition.hpp test.cpp)
 
 add_library(BAgraph ${SOURCE_FILES})
 
 INCLUDE_DIRECTORIES(C:/Users/Karol/ClionProjects/BAgraph/BAgraph/include)
 LINK_DIRECTORIES(C:/Users/Karol/ClionProjects/BAgraph/BAgraph/include)
-add_executable(Bachelor main.cpp)
-TARGET_LINK_LIBRARIES(BAgraph algorithms.hpp graphs.hpp invariants.hpp io.hpp lib.hpp multipoles.hpp operations.hpp random.hpp sat.hpp snarks.hpp util.hpp)
+add_executable(Bachelor main.cpp test.cpp)
+TARGET_LINK_LIBRARIES(BAgraph graphs.hpp io.hpp random.hpp)
 
 
 include(CheckCXXCompilerFlag)
@@ -24,5 +24,5 @@ set(CMAKE_CXX_FLAGS "-fconcepts ${CMAKE_CXX_FLAGS}")
 
 if(NOT SUPPORT_CONCEPTS)
     message(FATAL_ERROR "Your compiler does not support concepts; try to
-use >=gcc-6")
+use >=gcc-8")
 endif()

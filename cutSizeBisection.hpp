@@ -1,7 +1,6 @@
 #include <cmath>
 #include "oneHelpfulSet.hpp"
 #include "io/print_nice.hpp"
-//#include "basic_impl.hpp"
 
 inline int getCutSize(Graph &graph, set<Number> v0){
     int cutsize = 0;
@@ -99,15 +98,7 @@ pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>>
     return pair(pair(v0Vertices, v0), pair(v1Vertices, v1));
 }
 
-pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> makeBisection(Graph &graph, Factory &f){
-    cout<<"before start of algorithm, set its precision (and slowness)\n";
-    cout<<"type integer from 1 (faster, less precise) to 15 (slower, but precise)\n";
-    int epsilonExp;
-    cin>>epsilonExp;
-    if ((epsilonExp>15)||(epsilonExp<1)){
-        cout<<"precision of algorithm is set to 5";
-        epsilonExp = 5;
-    }
+pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> makeBisection(Graph &graph, Factory &f, float epsilonExp){
     float epsilonLimit = pow(0.1, epsilonExp);
 
     float epsilon = 1.0/2;
@@ -134,4 +125,16 @@ pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> makeBisecti
         epsilon /= 2;
     }
     return bisectionSet;
+}
+
+pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> makeBisection(Graph &graph, Factory &f){
+    cout<<"before start of algorithm, set its precision (and slowness)\n";
+    cout<<"type integer from 1 (faster, less precise) to 15 (slower, but precise)\n";
+    int epsilonExp;
+    cin>>epsilonExp;
+    if ((epsilonExp>15)||(epsilonExp<1)){
+        cout<<"precision of algorithm is set to 5";
+        epsilonExp = 5;
+    }
+    return makeBisection(graph, f, epsilonExp);
 }
