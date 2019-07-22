@@ -791,7 +791,7 @@ set<Number> reducedGraph(Graph &graph, multiset<pair<Number, Number>> &blackEdge
                         set<set<Number>> allPaths = getAllPaths(graphOfDesignatedVertices, nodes);
 
                         for (auto n: vertices){
-                            set<set<Number>> incidentPaths = p(n, vertices, allPaths, allNodes, graphOfDesignatedVertices,
+                            set<set<Number>> incidentPaths = p(n, allPaths, allNodes, graphOfDesignatedVertices,
                                                                blackGraph, blackEdges, epsilon, blackComponents);
                             int sumOfAlpha = 0;
                             for (auto &ip: incidentPaths)

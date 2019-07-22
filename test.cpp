@@ -2,6 +2,7 @@
 #include <fstream>
 #include "basic_impl.hpp"
 #include "pathDecomposition.hpp"
+#include "io/print_nice.hpp"
 
 using namespace ba_graph;
 using namespace std;
@@ -9,8 +10,8 @@ using namespace std;
 Graph open(string filename, Factory &f){
     ifstream file;
     Graph graph(createG(f));
+    filename = R"(C:\Users\Karol\ClionProjects\Bachelor\graph_examples\)" + filename + ".txt";
     file.open(filename);//.c_str() );
-    filename = "C:\\Users\\Karol\\ClionProjects\\Bachelor\\graph_examples\\" + filename + ".txt";
     if (!file) {
         cerr << "Unable to open file at path " + filename + "\n";
         exit(1);
@@ -141,83 +142,83 @@ int main(){
     }
 
     multiset<pair<Number, Number>> blackEdges;
-    blackEdges.insert(0,1);
-    blackEdges.insert(2,3);
-    blackEdges.insert(4,5);
-    blackEdges.insert(6,7);
-    blackEdges.insert(8,9);
-    blackEdges.insert(10,11);
-    blackEdges.insert(12,13);
-    blackEdges.insert(15,16);
-    blackEdges.insert(17,18);
-    blackEdges.insert(19,20);
-    blackEdges.insert(22,23);
-    blackEdges.insert(24,25);
-    blackEdges.insert(21,26);
-    blackEdges.insert(27,29);
-    blackEdges.insert(14,30);
-    blackEdges.insert(28,31);
+    blackEdges.insert(pair(0,1));
+    blackEdges.insert(pair(2,3));
+    blackEdges.insert(pair(4,5));
+    blackEdges.insert(pair(6,7));
+    blackEdges.insert(pair(8,9));
+    blackEdges.insert(pair(10,11));
+    blackEdges.insert(pair(12,13));
+    blackEdges.insert(pair(15,16));
+    blackEdges.insert(pair(17,18));
+    blackEdges.insert(pair(19,20));
+    blackEdges.insert(pair(22,23));
+    blackEdges.insert(pair(24,25));
+    blackEdges.insert(pair(21,26));
+    blackEdges.insert(pair(27,29));
+    blackEdges.insert(pair(14,30));
+    blackEdges.insert(pair(28,31));
     assert(redBlackEdgesTest(g2, blackEdges));
 
     blackEdges.clear();
-    blackEdges.insert(0,1);
-    blackEdges.insert(1,2);
-    blackEdges.insert(3,4);
-    blackEdges.insert(3,13);
-    blackEdges.insert(4,13);
-    blackEdges.insert(5,14);
-    blackEdges.insert(11,12);
-    blackEdges.insert(12,13);
-    blackEdges.insert(9,10);
-    blackEdges.insert(6,7);
-    blackEdges.insert(8,15);
+    blackEdges.insert(pair(0,1));
+    blackEdges.insert(pair(1,2));
+    blackEdges.insert(pair(3,4));
+    blackEdges.insert(pair(3,13));
+    blackEdges.insert(pair(4,13));
+    blackEdges.insert(pair(5,14));
+    blackEdges.insert(pair(11,12));
+    blackEdges.insert(pair(12,13));
+    blackEdges.insert(pair(9,10));
+    blackEdges.insert(pair(6,7));
+    blackEdges.insert(pair(8,15));
     assert(redBlackEdgesTest(g4, blackEdges));
 
     blackEdges.clear();
-    blackEdges.insert(0,11);
-    blackEdges.insert(0,12);
-    blackEdges.insert(0,13);
-    blackEdges.insert(3,12);
-    blackEdges.insert(1,7);
-    blackEdges.insert(2,10);
-    blackEdges.insert(4,5);
-    blackEdges.insert(4,6);
-    blackEdges.insert(2,8);
-    blackEdges.insert(8,9);
+    blackEdges.insert(pair(0,11));
+    blackEdges.insert(pair(0,12));
+    blackEdges.insert(pair(0,13));
+    blackEdges.insert(pair(3,12));
+    blackEdges.insert(pair(1,7));
+    blackEdges.insert(pair(2,10));
+    blackEdges.insert(pair(4,5));
+    blackEdges.insert(pair(4,6));
+    blackEdges.insert(pair(2,8));
+    blackEdges.insert(pair(8,9));
     assert(redBlackEdgesTest(g3, blackEdges));
 
     blackEdges.clear();
-    blackEdges.insert(0,2);
-    blackEdges.insert(2,4);
-    blackEdges.insert(4,9);
-    blackEdges.insert(0,7);
-    blackEdges.insert(1,9);
-    blackEdges.insert(1,6);
-    blackEdges.insert(3,6);
-    blackEdges.insert(5,8);
+    blackEdges.insert(pair(0,2));
+    blackEdges.insert(pair(2,4));
+    blackEdges.insert(pair(4,9));
+    blackEdges.insert(pair(0,7));
+    blackEdges.insert(pair(1,9));
+    blackEdges.insert(pair(1,6));
+    blackEdges.insert(pair(3,6));
+    blackEdges.insert(pair(5,8));
     assert(redBlackEdgesTest(g7, blackEdges));
 
     blackEdges.clear();
-    blackEdges.insert(0,1);
-    blackEdges.insert(1,2);
-    blackEdges.insert(2,18);
-    blackEdges.insert(17,29);
-    blackEdges.insert(14,15);
-    blackEdges.insert(15,16);
-    blackEdges.insert(14,28);
-    blackEdges.insert(12,13);
-    blackEdges.insert(19,27);
-    blackEdges.insert(3,20);
-    blackEdges.insert(4,21);
-    blackEdges.insert(30,31);
-    blackEdges.insert(10,11);
-    blackEdges.insert(9,26);
-    blackEdges.insert(7,8);
-    blackEdges.insert(24,25);
-    blackEdges.insert(5,22);
-    blackEdges.insert(6,23);
-    blackEdges.insert(7,24);
-    blackEdges.insert(8,24);
+    blackEdges.insert(pair(0,1));
+    blackEdges.insert(pair(1,2));
+    blackEdges.insert(pair(2,18));
+    blackEdges.insert(pair(17,29));
+    blackEdges.insert(pair(14,15));
+    blackEdges.insert(pair(15,16));
+    blackEdges.insert(pair(14,28));
+    blackEdges.insert(pair(12,13));
+    blackEdges.insert(pair(19,27));
+    blackEdges.insert(pair(3,20));
+    blackEdges.insert(pair(4,21));
+    blackEdges.insert(pair(30,31));
+    blackEdges.insert(pair(10,11));
+    blackEdges.insert(pair(9,26));
+    blackEdges.insert(pair(7,8));
+    blackEdges.insert(pair(24,25));
+    blackEdges.insert(pair(5,22));
+    blackEdges.insert(pair(6,23));
+    blackEdges.insert(pair(7,24));
+    blackEdges.insert(pair(8,24));
     assert(redBlackEdgesTest(g1, blackEdges));
 
     cout << "END OF TEST";

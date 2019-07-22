@@ -2,6 +2,7 @@
 #include "redBlackEdges.hpp"
 //#include <algorithm>
 #include <unordered_set>
+#include "io/print_nice.hpp"
 
 using namespace std;
 using namespace ba_graph;

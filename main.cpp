@@ -82,51 +82,8 @@ int main(){
             } else cerr << R"(you have entered other than "g", "f" or "c")" << "\n";
         }
 
-        cout << R"(OK, you have set your input graph. Now make a cut, path decomposition, find one-helpful set or
-                find set in red-black graph(d/c/o/r))"<<"\n";
-        cin >> answer;
-        if (answer == "d")
-            pathDecomposition(graph);
-        else if (answer == "o"){
-            cout<<"Set vertices in set V0 and in set V1.\nIn first row write V0-vertices' numbers separated by space."
-                  " Non-mentioned vertices will be considered as V1-vertices.\n";
-            cin>>answer;
-            set<Number> v0set;
-            v0set.insert(answer.front());
-            cin>>answer;
-            cout<<"Set epsilon value. Make sure that cutsize is greater than (1/3 + 2 epsilon)|V0|\n";
-            float epsilon;
-            cin>>epsilon;
-            if ((1.0/3+2*epsilon)*v0set.size()<getCutsize(graph, v0set))
-                cout<<getHelpfulSet(graph, v0set, epsilon, f);
-            else cerr<<"Bad value of epsilon.\n";
-        } else if (answer == "r"){
-            cout<<"Now set how many vertices will be black. Every next row will contain one edge = pair of vertices.\n"
-                  "Order of vertices should be same as defined. At the end enter \"end\".\n"
-                  "MAKE SURE EVERY VERTEX IS COVERED BY BLACK EDGE\n";
-            multiset<pair<Number, Number>> blackEdges;
-            int n, v, u;
-            cin>>n;
-            for (int i = 0; i<n; i++){
-                cin>>v>>u;
-                blackEdges.insert(pair(v, u));
-            }
-            Graph blackGraph = createG(f);
-            for (auto &ver:graph)
-                addV(blackGraph, ver.n(), f);
-            for (auto &edg:blackEdges)
-                addE(blackGraph, Loc(edg.first, edg.second), f);
-            float epsilon;
-            cout<<"Set value of epsilon.\n"
-                  "Number of red edges should be greater than (1/2+epsilon)|V|";
-            cin>>epsilon;
-            if (graph.size()-blackEdges.size()>(1.0/2+epsilon)*graph.order())
-                cout<<redBlackEdges(graph, blackEdges, epsilon, blackGraph, f);
-            else cerr<<"Bad value of epsilon.\n";
-        } else {
-            cout << "Unexpected symbol. The decomposition will be done.\n";
-            pathDecomposition(graph);
-        }
+        cout << "OK, you have set your input graph. Here is the decomposition: (if larger input, wait a while)\n";
+        cout << pathDecomposition(graph)<<"\n";
 
         cout<<"if you want to quit, type \"quit\", otherwise type anything else.\n";
         cin>>answer;
