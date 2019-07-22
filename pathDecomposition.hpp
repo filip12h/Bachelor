@@ -68,7 +68,7 @@ vector<set<Number>> treeDecomposition(Graph &graph, set<Number> treeVertices, Nu
 }
 
 //function will reduce components, i.e. bags which are subsets of neighbor bags will be removed
-// we will get value of pathwidth
+// we will get value of decomposition's width
 inline int reduceDecomposition(vector<set<Number>> &decomposition){
     int decSize = decomposition.size(), pathWidth = 0;
     for (int i = 0; i<decSize-1; i++) {
@@ -231,11 +231,11 @@ inline bool decompositionTest(Graph &graph_calculate, vector<set<Number>> decomp
     return goodDecomposition;
 }
 
-vector<set<Number>> pathDecomposition(Graph &graph, Factory &f){
+vector<set<Number>> pathDecomposition(Graph &graph, int epsilonExp){
 
-    pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> bisectionSet = makeBisection(graph, f);
+    Factory f;
 
-    //cout<<bisectionSet<<"\n\n";
+    pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> bisectionSet = makeBisection(graph, f, epsilonExp);
 
     Graph v0Graph(createG(f));
     for (auto &n:bisectionSet.first.second)
@@ -266,19 +266,13 @@ vector<set<Number>> pathDecomposition(Graph &graph, Factory &f){
     decomposition.insert(decomposition.end(), middleDecomposition.begin(), middleDecomposition.end());
     decomposition.insert(decomposition.end(), v1Decomposition.begin(), v1Decomposition.end());
 
-    //cout<<decomposition<<"\n";
-
     int sizeOfDecomposition = reduceDecomposition(decomposition);
 
     cout<<"Size of the path decomposition is: "<<sizeOfDecomposition<<"\n\n";
-    cout<<decomposition<<"\n";
 
-    cout<<"Do you want to test if decomposition went good or wrong? (y/n)";
-    string answer;
-    cin>>answer;
-    if (answer == "y") {
-        if (decompositionTest(graph, decomposition)) cout<<"Decomposition is GOOD";
-        else cout<<"Decomposition is NOT GOOD";
-    }
     return decomposition;
+}
+
+vector<set<Number>> pathDecomposition(Graph &graph){
+    return pathDecomposition(graph, 5);
 }

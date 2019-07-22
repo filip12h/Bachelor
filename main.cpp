@@ -9,16 +9,9 @@
 #include <fstream>
 #include <dirent.h>
 #include <string>
-#include <windows.h>
 
 using namespace ba_graph;
 using namespace std;
-
-string getexepath()
-{
-    char result[ MAX_PATH ];
-    return std::string( result, GetModuleFileName( NULL, result, MAX_PATH ) );
-}
 
 int main(){
     
@@ -69,9 +62,8 @@ int main(){
                 ifstream file;
                 string filename;
 
-                cout << "Please enter a name of file to read from:\n";
+                cout << "Please enter a path of file to read from:\n";
                 cin >> filename;
-                filename = getexepath()+ "\\" + filename + ".txt";
                 file.open(filename);//.c_str() );
                 if (!file) {
                     cerr << "Unable to open file at path " + filename + "\n";
@@ -94,15 +86,8 @@ int main(){
                 find set in red-black graph(d/c/o/r))"<<"\n";
         cin >> answer;
         if (answer == "d")
-            pathDecomposition(graph, f);
-        else if (answer == "c") {
-            pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> bisectionSet  = makeBisection(graph, f);
-            cout << "Cut has been done. Its size is: "<<getCutsize(graph, bisectionSet.first.first, bisectionSet.second.first)<<
-                 "\nVertices are divided into 2 sets - V0 and V1.\nV0 cut vertices:("<< bisectionSet.first.first.size() << " elements)\n"
-                 << bisectionSet.first.first << "\nV1 cut vertices:(" << bisectionSet.second.first.size() << " elements)\n"
-                 << bisectionSet.second.first;
-            cout << "\nV0 elements:\n" << bisectionSet.first.second << "\nV1 elements:\n" << bisectionSet.second.second<<"\n";
-        } else if (answer == "o"){
+            pathDecomposition(graph);
+        else if (answer == "o"){
             cout<<"Set vertices in set V0 and in set V1.\nIn first row write V0-vertices' numbers separated by space."
                   " Non-mentioned vertices will be considered as V1-vertices.\n";
             cin>>answer;
@@ -112,7 +97,7 @@ int main(){
             cout<<"Set epsilon value. Make sure that cutsize is greater than (1/3 + 2 epsilon)|V0|\n";
             float epsilon;
             cin>>epsilon;
-            if ((1.0/3+2*epsilon)*v0set.size()<getCutSize(graph, v0set))
+            if ((1.0/3+2*epsilon)*v0set.size()<getCutsize(graph, v0set))
                 cout<<getHelpfulSet(graph, v0set, epsilon, f);
             else cerr<<"Bad value of epsilon.\n";
         } else if (answer == "r"){
@@ -140,7 +125,7 @@ int main(){
             else cerr<<"Bad value of epsilon.\n";
         } else {
             cout << "Unexpected symbol. The decomposition will be done.\n";
-            pathDecomposition(graph, f);
+            pathDecomposition(graph);
         }
 
         cout<<"if you want to quit, type \"quit\", otherwise type anything else.\n";

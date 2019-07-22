@@ -94,7 +94,7 @@ inline map<Number, multiset<Number>> transformationType1(set<Number> &cVertices,
         Number beta, gama, delta;
         for (auto &n: neighbors[v]) {
             if (cVertices.find(n) != cVertices.end())
-                for (auto &n2: neighbors[n])
+                for (auto &n2: neighbors[n]) {
                     if ((d1Vertices.find(n2) != d1Vertices.end()) || (d2Vertices.find(n2) != d2Vertices.end())) {
                         if (d1Vertices.find(n2) != d1Vertices.end()) gamaInD1 = true;
                         for (auto &n3: neighbors[n2]) {
@@ -111,6 +111,7 @@ inline map<Number, multiset<Number>> transformationType1(set<Number> &cVertices,
                         }
                     }
                     if (doTransformation) break;
+                }
             if (doTransformation) break;
         }
         if (doTransformation) {
@@ -147,12 +148,12 @@ inline map<Number, multiset<Number>> transformationType1(set<Number> &cVertices,
 
 }
 
-inline map<Number, multiset<Number>> transformationType2(set<Number> cVertices, set<Number> &d1Vertices, set<Number> &d2Vertices,
+inline map<Number, multiset<Number>> transformationType2(set<Number> &d1Vertices, set<Number> &d2Vertices,
         set<Number> &d3Vertices, set<Number> &eVertices, map<Number, multiset<Number>> neighbors,
         vector<pair<pair<pair<Number, Number>, pair<Number, Number>>, pair<pair<Number, Number>, pair<Number, Number>>>>
                                              &executedTransformations){
 
-    bool gamaInD1, deltaInD1, doTransformation;
+    bool deltaInD1, doTransformation;
     Number beta, gama, delta;
     set<Number> copyOfD3Vertices;
     for (auto &n: d3Vertices)
@@ -210,16 +211,20 @@ inline map<Number, multiset<Number>> transformationType2(set<Number> cVertices, 
     return neighbors;
 }
 
-//lemma 2, see more in pdf file
-//simpleSteps is true when we check only directly catchable cases
-set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &f){
-
+inline multiset<pair<Number, Number>> getCut(Graph &graph, set<Number> v0){
     multiset<pair<Number, Number>> cut;
-
     for (auto &v: v0)
         for (auto &e: graph[v])
             if (v0.find(e.n2())==v0.end())
                 cut.insert(pair(v, e.n2()));
+    return cut;
+}
+
+//lemma 2, see more in pdf file
+//simpleSteps is true when we check only directly catchable cases
+set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &f){
+
+    multiset<pair<Number, Number>> cut = getCut(graph, v0);
 
     set<Number> vertices;
 
@@ -337,7 +342,7 @@ set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &
 
     transformedNeighbors = transformationType1(cVertices, d1Vertices, d2Vertices, d3Vertices, eVertices, neighbors,
             executedTransformations1);
-    transformedNeighbors = transformationType2(cVertices, d1Vertices, d2Vertices, d3Vertices, eVertices,
+    transformedNeighbors = transformationType2(d1Vertices, d2Vertices, d3Vertices, eVertices,
             transformedNeighbors, executedTransformations2);
 
     Graph redBlackGraph(createG());
@@ -380,7 +385,6 @@ set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &
                     dNeighbors.push_back(n);
             if (dNeighbors.size()==2) {
                 redEdges.insert(pair(dNeighbors[0], dNeighbors[1])); //after transformation there should be 2 D vertices
-                //vertices.insert(v.first); //TODO not sure why did I write this?!??
             }
         }
 
@@ -438,4 +442,19 @@ set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &
         vertices.clear();
         return vertices;
     }
+}
+
+set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon){
+    Factory f;
+    if ((1.0/3+2*epsilon)*v0.size()<getCut(graph, v0).size())
+        cout<<getHelpfulSet(graph, v0, epsilon, f);
+    else cerr<<"Bad value of epsilon.\n";
+    return getHelpfulSet(graph, v0, epsilon, f);
+}
+
+set<Number> getHelpfulSet(Graph &graph, set<Number> v0){
+    Factory f;
+    //epsilon must be lower than (getCut(graph, v0).size()/v0.size()-1/3)/2, so therefore it is 2.01
+    float epsilon = ((getCut(graph, v0).size()/float(v0.size()))-1.0/3)/2.01;
+    return getHelpfulSet(graph, v0, epsilon, f);
 }

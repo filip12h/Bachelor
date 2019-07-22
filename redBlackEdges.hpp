@@ -153,7 +153,7 @@ set<set<Number>> blackComponents(Graph g, multiset<pair<Number, Number>> blackEd
 }
 
 // set is positive if it has more internal red edges, negative if there are more external black edges, neutral if equal
-inline int isPositive(set<Number> vertices, Graph &g, multiset<pair<Number, Number>> blackEdges){
+inline bool isPositive(set<Number> vertices, Graph &g, multiset<pair<Number, Number>> blackEdges){
     int intRedEdges = 0, extBlackEdges = 0;
     for (auto &n: vertices){
         for (auto &inc: g[n]){
@@ -167,10 +167,8 @@ inline int isPositive(set<Number> vertices, Graph &g, multiset<pair<Number, Numb
         }
     }
     if (intRedEdges>extBlackEdges)
-        return 1;
-    else if (intRedEdges<extBlackEdges)
-        return -1;
-    else return 0;
+        return true;
+    else return false;
 }
 
 
@@ -259,8 +257,7 @@ bool isThin(set<Number> vertices, Graph &g, multiset<pair<Number, Number>> &blac
 
 //number of edges which can be removed without splitting it into 2 or more components
 //tree is connected and has n-1 edges. Therefore, r() = |E| - n + 1
-inline int r(set<Number> vertices, Graph g, multiset<pair<Number, Number>> blackEdges,
-        float epsilon, set<set<Number>> connectedComponents){
+inline int r(set<Number> vertices, Graph g, multiset<pair<Number, Number>> blackEdges){
     int numOfBlackEdges = 0; //number of black edges among vertices
     for (auto &n: vertices){
         for (auto it: g[n].list(IP::primary())){ //check incident edges of vertex n
@@ -639,7 +636,7 @@ bool isPathPlus(set<Number> path, set<node*> &allNodes, set<Number> graphOfDesig
 }
 
 //set of paths "plus" incident to vertex
-set<set<Number>> p(Number &vertex, set<Number> &vertices, set<set<Number>> &setOfPaths, set<node*> &allNodes,
+set<set<Number>> p(Number &vertex, set<set<Number>> &setOfPaths, set<node*> &allNodes,
         set<Number> &graphOfDesignatedVertices, Graph &blackGraph, multiset<pair<Number, Number>> &blackEdges,
         float epsilon, set<set<Number>> &connectedComponents){
     set<set<Number>> result;
@@ -944,4 +941,26 @@ set<Number> redBlackEdges(Graph &graph, multiset<pair<Number, Number>> &blackEdg
 
     return reducedGraph(graph, blackEdges, epsilon, isRemoved,
             blackComponentsFamily, blackGraph, f);
+}
+
+set<Number> redBlackEdges(Graph &graph, multiset<pair<Number, Number>> &blackEdges, float epsilon){
+    Factory f;
+    Graph blackGraph(createG(f));
+    for (auto &rot:graph)
+        addV(blackGraph, rot.n(), f);
+    for (auto &e:blackEdges)
+        addE(blackGraph, Loc(e.first, e.second), f);
+    return redBlackEdges(graph, blackEdges, epsilon, blackGraph, f);
+}
+
+set<Number> redBlackEdges(Graph &graph, multiset<pair<Number, Number>> &blackEdges){
+    Factory f;
+    Graph blackGraph(createG(f));
+    for (auto &rot:graph)
+        addV(blackGraph, rot.n(), f);
+    for (auto &e:blackEdges)
+        addE(blackGraph, Loc(e.first, e.second), f);
+    //epsilon must be lower than |R|/|V| - 1/2, so therefore it is 2.01
+    float epsilon = (graph.size()-blackEdges.size())/float(graph.order())-1/2.01;
+    return redBlackEdges(graph, blackEdges, epsilon, blackGraph, f);
 }
