@@ -3,8 +3,7 @@
 #include "io/print_nice.hpp"
 
 //we will reach vertices of one of the sets V0 and V1 of the cut pi(V0, V1)
-pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>>
-        getGoodBisection(Graph &graph, float &epsilon, Factory &f){
+array<set<Number>, 4> getGoodBisection(Graph &graph, float &epsilon, Factory &f){
     set<Number> v0, v1, allVerticesOfGraph;
     for (int i = 1; i<graph.order(); i++)
         v0.insert(graph[i].n());
@@ -74,8 +73,12 @@ pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>>
                 v0Vertices.insert(n);
                 v1Vertices.insert(n2.n2());
             }
-
-    return pair(pair(v0Vertices, v0), pair(v1Vertices, v1));
+    array<set<Number>, 4> result;
+    result[0] = v0Vertices;
+    result[1] = v0;
+    result[2] = v1Vertices;
+    result[3] = v1;
+    return result;
 }
 
 inline int getCutsize(Graph &graph, set<Number> v0){
@@ -88,21 +91,20 @@ inline int getCutsize(Graph &graph, set<Number> v0){
     return cutsize;
 }
 
-pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> makeBisection(Graph &graph, Factory &f, float epsilonExp){
+array<set<Number>, 4> makeBisection(Graph &graph, Factory &f, float epsilonExp){
     float epsilonLimit = pow(0.1, epsilonExp);
 
     float epsilon = 1.0/2;
 
     //bisectionSet is in ((a, b), (c, d)) format, where b is V0, d is V1 and a(c) are C-vertices in V0(V1)
     long long int bisectionWidth = INT64_MAX;
-    pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> bisectionSet;
+    array<set<Number>, 4> bisectionSet;
 
     while (true) {
-        pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>>
-                candidateBisection = getGoodBisection(graph, epsilon, f);
-        if (getCutsize(graph, candidateBisection.first.second)<bisectionWidth){
+        array<set<Number>, 4> candidateBisection = getGoodBisection(graph, epsilon, f);
+        if (getCutsize(graph, candidateBisection[1])<bisectionWidth){
             bisectionSet = candidateBisection;
-            bisectionWidth = getCutsize(graph, candidateBisection.first.second);
+            bisectionWidth = getCutsize(graph, candidateBisection[1]);
             //bisectionWidth = max(candidateBisection.first.first.size(), candidateBisection.second.first.size());
         } else {
             //long double limit = (1.0/(pow(graph.order(), 3)));
@@ -117,19 +119,19 @@ pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> makeBisecti
     return bisectionSet;
 }
 
-void printBisection(pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> bisectionSet){
+void printBisection(array<set<Number>, 4> bisectionSet){
     cout << "Cut has been done. Vertices are divided into 2 sets - V0 and V1.\nV0 cut vertices:("<<
-        bisectionSet.first.first.size() << " elements)\n"<< bisectionSet.first.first << "\nV1 cut vertices:(" <<
-        bisectionSet.second.first.size() << " elements)\n"<< bisectionSet.second.first;
-    cout << "\nV0 elements:\n" << bisectionSet.first.second << "\nV1 elements:\n" << bisectionSet.second.second<<"\n";
+        bisectionSet[0].size() << " elements)\n"<< bisectionSet[0] << "\nV1 cut vertices:(" <<
+        bisectionSet[2].size() << " elements)\n"<< bisectionSet[2];
+    cout << "\nV0 elements:\n" << bisectionSet[1] << "\nV1 elements:\n" << bisectionSet[3]<<"\n";
 }
 
-pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> makeBisection(Graph &graph){
+array<set<Number>, 4> makeBisection(Graph &graph){
     Factory f;
     return makeBisection(graph, f, 5);
 }
 
-pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> makeBisection(Graph &graph, float epsilonExp){
+array<set<Number>, 4> makeBisection(Graph &graph, float epsilonExp){
     Factory f;
     return makeBisection(graph, f, epsilonExp);
 }

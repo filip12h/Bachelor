@@ -5,7 +5,7 @@ COMPILE_DBG = $(CXX) $(CFLAGS) $(DBGFLAGS)
 COMPILE_RELEASE = $(CXX) $(CFLAGS)
 
 test: test.cpp
-	$(COMPILE_DBG) test.cpp -o test.out
+	$(COMPILE_DBG) test.cpp -o test.exe
 
 compile_debug_run: compile_debug
 	./main.out

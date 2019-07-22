@@ -32,7 +32,7 @@ set<Number> getTreeComponent(Graph &graph, set<Number> vertices){
         if ((vertices.find(rot.n())!=vertices.end())&&(!visited[rot.n()])) { //only vertices in set "vertices"
             set<Number> possibleResult;
             DFS(rot.n(), visited, graph, vertices, possibleResult);
-            int numOfEdges = 0;
+            unsigned int numOfEdges = 0;
             for (auto &n : possibleResult)
                 for (auto &inc : graph[n])
                     if ((possibleResult.find(inc.n2())!=possibleResult.end())&&(rot.n()>inc.n2()))
@@ -70,7 +70,8 @@ vector<set<Number>> treeDecomposition(Graph &graph, set<Number> treeVertices, Nu
 //function will reduce components, i.e. bags which are subsets of neighbor bags will be removed
 // we will get value of decomposition's width
 inline int reduceDecomposition(vector<set<Number>> &decomposition){
-    int decSize = decomposition.size(), pathWidth = 0;
+    int decSize = decomposition.size();
+    unsigned int pathWidth = 0;
     for (int i = 0; i<decSize-1; i++) {
         if (decomposition[i].size()>pathWidth)
             pathWidth = decomposition[i].size();
@@ -119,7 +120,6 @@ vector<set<Number>> getMiddleDecomposition(Graph &graph, vector<set<Number>> &de
     return decomposition;
 }
 
-//until 25th set of decomposition of bigGraph working well
 vector<set<Number>> makeDecomposition(Graph &graph, vector<set<Number>> &decomposition, set<Number> &currentSet,
         set<Number> &verticesToDecompose){
     int setSize = currentSet.size();
@@ -179,7 +179,8 @@ vector<set<Number>> makeDecomposition(Graph &graph, vector<set<Number>> &decompo
             bool addedVertex = false;
             for (auto &n: currentSet) {
                 for (auto &inc: graph[n]) {
-                    if (currentSet.find(inc.n2()) == currentSet.end()) {
+                    if ((currentSet.find(inc.n2()) == currentSet.end())&&
+                        (verticesToDecompose.find(inc.n2())!=verticesToDecompose.end())) {
                         currentSet.insert(inc.n2());
                         addedVertex = true;
                         break;
@@ -234,32 +235,30 @@ inline bool decompositionTest(Graph &graph_calculate, vector<set<Number>> decomp
 vector<set<Number>> pathDecomposition(Graph &graph, int epsilonExp){
 
     Factory f;
-
-    pair<pair<set<Number>, set<Number>>, pair<set<Number>, set<Number>>> bisectionSet = makeBisection(graph, f, epsilonExp);
+    array<set<Number>, 4> bisectionSet = makeBisection(graph, f, epsilonExp);
 
     Graph v0Graph(createG(f));
-    for (auto &n:bisectionSet.first.second)
+    for (auto &n:bisectionSet[1])
         addV(v0Graph, n, f);
-    for (auto &n:bisectionSet.first.second)
+    for (auto &n:bisectionSet[1])
         for (auto &n2: graph[n])
-            if ((n.to_int()<n2.n2().to_int())&&(bisectionSet.first.second.find(n2.n2())!=bisectionSet.first.second.end()))
+            if ((n.to_int()<n2.n2().to_int())&&(bisectionSet[1].find(n2.n2())!=bisectionSet[1].end()))
                 addE(v0Graph, Loc(n, n2.n2()), f);
     Graph v1Graph(createG(f));
-    for (auto &n:bisectionSet.second.second)
+    for (auto &n:bisectionSet[3])
         addV(v1Graph, n, f);
-    for (auto &n:bisectionSet.second.second)
+    for (auto &n:bisectionSet[3])
         for (auto &n2: graph[n])
-            if ((n.to_int()<n2.n2().to_int())&&(bisectionSet.second.second.find(n2.n2())!=bisectionSet.second.second.end()))
+            if ((n.to_int()<n2.n2().to_int())&&(bisectionSet[3].find(n2.n2())!=bisectionSet[3].end()))
                 addE(v1Graph, Loc(n, n2.n2()), f);
 
     vector<set<Number>> v0Decomposition;
-    makeDecomposition(v0Graph, v0Decomposition, bisectionSet.first.first, bisectionSet.first.second);
+    makeDecomposition(v0Graph, v0Decomposition, bisectionSet[0], bisectionSet[1]);
     vector<set<Number>> v1Decomposition;
-    makeDecomposition(v1Graph, v1Decomposition, bisectionSet.second.first, bisectionSet.second.second);
+    makeDecomposition(v1Graph, v1Decomposition, bisectionSet[2], bisectionSet[3]);
 
     vector<set<Number>> middleDecomposition;
-    middleDecomposition = getMiddleDecomposition(graph, middleDecomposition, bisectionSet.first.first,
-                                                 bisectionSet.second.first);
+    middleDecomposition = getMiddleDecomposition(graph, middleDecomposition, bisectionSet[0], bisectionSet[2]);
 
     vector<set<Number>> decomposition;
     decomposition.insert(decomposition.end(), v0Decomposition.rbegin(), v0Decomposition.rend());

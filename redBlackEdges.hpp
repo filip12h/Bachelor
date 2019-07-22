@@ -385,7 +385,6 @@ map<pair<Number, Number>, set<Number>> edgeRef(Graph &graph, map<Number, bool> &
         set<Number> kernelOfComponent = connectedComponents(graph, comp, isRemoved).begin().operator*();
         if (!kernelOfComponent.empty()){
             set<set<Number>> reducedTreesOfComponent = connectedComponents(graph, comp, isNotRemoved);
-            //TODO: is this working properly?!
             for (auto &rtc: reducedTreesOfComponent){
                 vector<Number> vertices;
                 //every component will be referenced by 1 edge - from v1 to v2 (v1==v2 is possible)
@@ -444,9 +443,10 @@ void reduceStep1(Graph &g, set<Number> graphToReduce, map<Number, bool> &isRemov
 //all paths (vertices of degree 2) we delete and replace them by 1 edge which will reference to deleted tree
 inline void reduceStep2(Graph &g, set<Number> graphToReduce,  map<Number, bool> &isRemoved,
         multiset<pair<Number, Number>> &blackEdges) {
-    bool toRemove[g.order()];
-    for (auto &a: toRemove)
-        a = false;
+    vector<bool> toRemove;
+    for (int i = 0; i<g.order(); i++) {
+        toRemove.push_back(false);
+    }
     for (auto &n: graphToReduce) {
         int removedNeighbors = 0, numOfBlackEdges = 0;
         for (auto &inc: g[n])
@@ -859,8 +859,8 @@ set<Number> reducedGraph(Graph &graph, multiset<pair<Number, Number>> &blackEdge
                                                     }
                                                 }
                                                 set<Number> finiteUnion;
-                                                int minSizeOfUnion = INT8_MAX;
-                                                for (int av = 0; av < alfaVertices.size() - 2; av++) {
+                                                unsigned int minSizeOfUnion = INT8_MAX;
+                                                for (unsigned int av = 0; av < alfaVertices.size() - 2; av++) {
                                                     set<Number> myUnion3;
                                                     for (int c = 0; c<3; c++) {
                                                         set<Number> mySet = u(next(alfaVertices.begin(), av + c).operator*(),

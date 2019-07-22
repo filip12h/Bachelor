@@ -244,9 +244,19 @@ set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &
     //at first we will check if any C vertex has 2 vertices connecting it to V1
     for(auto &v: cVertices) {
         int numOfNeighborsInside = 0;
-        for (auto &n:neighbors[v])
-            if (v0.find(n) != v0.end())
+        for (auto &n:neighbors[v]) {
+            if (v0.find(n) != v0.end()) {
                 numOfNeighborsInside++;
+            }
+            if (cVertices.find(n) != cVertices.end()) {
+                vertices.insert(n);
+                vertices.insert(v);
+                multiset<pair<Number, Number>> cut = getCut(graph, v0);
+                if (helpfulnessOfSet(graph, v0, vertices, cut)){
+                    return vertices;
+                } else vertices.clear();
+            }
+        }
         if (numOfNeighborsInside<=1){
             vertices.insert(v);
             return vertices;
@@ -334,7 +344,7 @@ set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &
 
     }
 
-    //every executed transformation includes 2 added vertices and 2 deleted vertices
+    //every executed transformation includes 2 added edges and 2 deleted edges
     //at the first position there is couple of added edges, at the second position couple of deleted edges
     vector<pair<pair<pair<Number, Number>, pair<Number, Number>>, pair<pair<Number, Number>, pair<Number, Number>>>>
             executedTransformations1;
@@ -437,7 +447,7 @@ set<Number> getHelpfulSet(Graph &graph, set<Number> v0, float epsilon, Factory &
     }
 
 
-    if (v0.size()-vertices.size() + 5 >= 2 * graph.order() / 5.0) {
+    if (v0.size()-vertices.size() >= graph.order() / 3.0) {
         return vertices;
     } else {
         vertices.clear();
