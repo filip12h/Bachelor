@@ -35,7 +35,7 @@ set<Number> getTreeComponent(Graph &graph, set<Number> vertices){
             unsigned int numOfEdges = 0;
             for (auto &n : possibleResult)
                 for (auto &inc : graph[n])
-                    if ((possibleResult.find(inc.n2())!=possibleResult.end())&&(rot.n()>inc.n2()))
+                    if ((possibleResult.find(inc.n2())!=possibleResult.end())&&(n>=inc.n2()))
                         numOfEdges++;
             if (possibleResult.size()>numOfEdges)
                 return possibleResult;

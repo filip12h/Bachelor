@@ -3,6 +3,7 @@
 #include "basic_impl.hpp"
 #include "pathDecomposition.hpp"
 #include "io/print_nice.hpp"
+#include "random/random_graphs.hpp"
 
 using namespace ba_graph;
 using namespace std;
@@ -120,7 +121,8 @@ int main(){
     cout << "START OF TEST\n";
 
     Factory f;
-    Graph g1(createG(f)),g2(createG(f)),g3(createG(f)),g4(createG(f)),g5(createG(f)),g6(createG(f)),g7(createG(f));
+    Graph g1(createG(f)),g2(createG(f)),g3(createG(f)),g4(createG(f)),g5(createG(f)),g6(createG(f)),g7(createG(f)),
+    g8(createG(f)), g9(createG(f));
     g1 = open("bigGraph", f);
     g2 = open("graph", f);
     g3 = open("koliskaGraph", f);
@@ -128,7 +130,9 @@ int main(){
     g5 = open("petersen", f);
     g6 = open("snarkJ9", f);
     g7 = open("symetricGraph", f);
-    for (int epsilonExp = 1; epsilonExp<20; epsilonExp = epsilonExp+7){
+    g8 = random_regular_multigraph(500, 3, f);
+    g9 = random_regular_multigraph(1000, 3, f);
+    for (int epsilonExp = 1; epsilonExp<16; epsilonExp = epsilonExp+7){
         assert(pathDecompositionTest(g1, f, epsilonExp));
         assert(pathDecompositionTest(g2, f, epsilonExp));
         assert(pathDecompositionTest(g3, f, epsilonExp));
@@ -136,6 +140,9 @@ int main(){
         assert(pathDecompositionTest(g5, f, epsilonExp));
         assert(pathDecompositionTest(g6, f, epsilonExp));
         assert(pathDecompositionTest(g7, f, epsilonExp));
+        assert(pathDecompositionTest(g8, f, epsilonExp));
+        assert(pathDecompositionTest(g9, f, epsilonExp));
+        cout<<"PROGRESS: "<<(epsilonExp+2)*5<<"%\n";
         assert(bisectionTest(g1, f, epsilonExp));
         assert(bisectionTest(g2, f, epsilonExp));
         assert(bisectionTest(g3, f, epsilonExp));
@@ -143,6 +150,9 @@ int main(){
         assert(bisectionTest(g5, f, epsilonExp));
         assert(bisectionTest(g6, f, epsilonExp));
         assert(bisectionTest(g7, f, epsilonExp));
+        assert(bisectionTest(g8, f, epsilonExp));
+        assert(bisectionTest(g9, f, epsilonExp));
+        cout<<"PROGRESS: "<<(epsilonExp+5)*5<<"%\n";
     }
 
     //ONE-HELPFUL SET

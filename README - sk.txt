@@ -10,6 +10,8 @@ cestovú dekompozíciu grafu, a test.cpp, ktorý súbory .hpp testuje.
     https://bitbucket.org/relatko/ba-graph/commits/67a1f4e718bd4aaf5a389aa54097db227800f27f.
     Pokiaľ nefunguje program správne s najnovšou verziou, skúste si stiahnuť
     verziu z 7.5.2019 ktorá je s týmto projektom kompatibilná.
+     - v Makefile nastavte cestu ku knižnici
+          - v CFLAGS - najčastejšie je to ../ba-graph/include/
 
   2. kompilátor by mal byť aspoň gcc-6 alebo vyšší
 

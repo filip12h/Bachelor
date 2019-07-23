@@ -10,6 +10,8 @@ makes path decomposition, and test.cpp which tests .hpp files.
     https://bitbucket.org/relatko/ba-graph/commits/67a1f4e718bd4aaf5a389aa54097db227800f27f.
     If you have troubles with current version, try download version from
     05/07/2019.
+      - in Makefile set the path to a library
+          - CFLAGS - usually it is ../ba-graph/in-clude/
 
   2. your compiler should be at least gcc-6 or higher
 
