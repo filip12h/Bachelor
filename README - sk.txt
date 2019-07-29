@@ -15,9 +15,6 @@ cestovú dekompozíciu grafu, a test.cpp, ktorý súbory .hpp testuje.
 
   2. kompilátor by mal byť aspoň gcc-6 alebo vyšší
 
-  3. v prípade testovania programu nastavte absolútnu cestu pre dosiahnutie priečinku graph_examples
-        - riadok 13 v test.cpp
-
 ###ROZHRANIA
 
 Projekt poskytuje rozhranie pre cestovú dekompozíciu grafu, avšak navyše aj
@@ -58,5 +55,10 @@ Projekt poskytuje rozhranie pre cestovú dekompozíciu grafu, avšak navyše aj
   V každom ďalšom riadku bude dvojica čísel - vrcholov v tvare "u v" - hrana medzi vrcholmi u a v.
 
   Po skončení dekompozície užívateľ môže ukončiť program ("quit") alebo pokračovať (hocičo iné, napríklad "nie").
-    
+
+  Používame Makefile
+    - do príkazového riadku napíšte "make" pre kompiláciu a beh programu
+    - do príkazového riadku napíšte "make test" pre vytvorenie dlhotrvajúceho testu, následne "test.exe" pre spustenie
+    - do príkazového riadku napíšte "make simple_test" pre vytvorenie rýchleho testu, následne "simple_test.exe" pre spustenie
+
 PRAJEM PRÍJEMNE STRÁVENÝ ČAS A DOBRÉ VYSLEDKY S TÝMTO PROJEKTOM :)

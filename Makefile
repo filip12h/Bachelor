@@ -16,4 +16,7 @@ compile_release:
 test: test.cpp
 	$(COMPILE_DBG) test.cpp -o test.exe
 
+simple_test: simple_test.cpp
+	$(COMPILE_DBG) simple_test.cpp -o simple_test.exe
+
 .PHONY: compile_debug_run compile_debug compile_release test

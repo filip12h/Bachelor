@@ -15,9 +15,6 @@ makes path decomposition, and test.cpp which tests .hpp files.
 
   2. your compiler should be at least gcc-6 or higher
 
-  3. in case of testing set the absolute path to folder graph_example
-        - row 13 in in test.cpp
-
 ###INTERFACES
 
 Project provides interfaces for path decomposition, cut of the
@@ -52,14 +49,19 @@ Project provides interfaces for path decomposition, cut of the
         - similarly as in getHelpfulSet, value of epsilon affects size of set
             we have to find (we skip further details)
 
-###FORMAT OF INPUT IN main.cpp
+###FORMAT OF INPUT
 
   In first row of command line is one integer - number of vertices. It should be even because graph is cubic.
   In every next row there is pair of numbers - "u v" means that there is edge between u and v.
     
   After path decomposition, you can choose if you want to quit or continue.
   (enter "quit" or anything else, for example "no")
-    
+
+  We use Makefile
+    - type "make" in command line for compile and run
+    - type "make test" in command line for making long-running test, then type test.exe for running it
+    - type "make simple_test" in command line for making quick test, then type simple_test.exe for running it
+
 WISH YOU HAVE A GOOD TIME WITH THIS PROJECT :)
 
      

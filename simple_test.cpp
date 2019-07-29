@@ -3,7 +3,6 @@
 #include "basic_impl.hpp"
 #include "pathDecomposition.hpp"
 #include "io/print_nice.hpp"
-#include "random/random_graphs.hpp"
 
 using namespace ba_graph;
 using namespace std;
@@ -122,7 +121,7 @@ int main(){
 
     Factory f;
     Graph g1(createG(f)),g2(createG(f)),g3(createG(f)),g4(createG(f)),g5(createG(f)),g6(createG(f)),g7(createG(f)),
-    g8(createG(f)), g9(createG(f)), g10(createG(f));
+    g8(createG(f)), g9(createG(f));
     g1 = open("bigGraph", f);
     g2 = open("graph", f);
     g3 = open("koliskaGraph", f);
@@ -131,32 +130,23 @@ int main(){
     g6 = open("snarkJ9", f);
     g7 = open("symetricGraph", f);
     g8 = open("graph100", f);
-    g9 = open("graph500", f);
-    g10 = open("graph1000", f);
-    for (int epsilonExp = 1; epsilonExp<16; epsilonExp = epsilonExp+7){
-        assert(pathDecompositionTest(g1, f, epsilonExp));
-        assert(pathDecompositionTest(g2, f, epsilonExp));
-        assert(pathDecompositionTest(g3, f, epsilonExp));
-        assert(pathDecompositionTest(g4, f, epsilonExp));
-        assert(pathDecompositionTest(g5, f, epsilonExp));
-        assert(pathDecompositionTest(g6, f, epsilonExp));
-        assert(pathDecompositionTest(g7, f, epsilonExp));
-        assert(pathDecompositionTest(g8, f, epsilonExp));
-        assert(pathDecompositionTest(g9, f, epsilonExp));
-        assert(pathDecompositionTest(g10, f, epsilonExp));
-        cout<<"PROGRESS: "<<(epsilonExp+2)*5<<"%\n";
-        assert(bisectionTest(g1, f, epsilonExp));
-        assert(bisectionTest(g2, f, epsilonExp));
-        assert(bisectionTest(g3, f, epsilonExp));
-        assert(bisectionTest(g4, f, epsilonExp));
-        assert(bisectionTest(g5, f, epsilonExp));
-        assert(bisectionTest(g6, f, epsilonExp));
-        assert(bisectionTest(g7, f, epsilonExp));
-        assert(bisectionTest(g8, f, epsilonExp));
-        assert(bisectionTest(g9, f, epsilonExp));
-        assert(bisectionTest(g10, f, epsilonExp));
-        cout<<"PROGRESS: "<<(epsilonExp+5)*5<<"%\n";
-    }
+
+    assert(pathDecompositionTest(g1, f, 15));
+    assert(pathDecompositionTest(g2, f, 15));
+    assert(pathDecompositionTest(g3, f, 15));
+    assert(pathDecompositionTest(g4, f, 15));
+    assert(pathDecompositionTest(g5, f, 15));
+    assert(pathDecompositionTest(g6, f, 15));
+    assert(pathDecompositionTest(g7, f, 15));
+    assert(pathDecompositionTest(g8, f, 15));
+    assert(bisectionTest(g1, f, 15));
+    assert(bisectionTest(g2, f, 15));
+    assert(bisectionTest(g3, f, 15));
+    assert(bisectionTest(g4, f, 15));
+    assert(bisectionTest(g5, f, 15));
+    assert(bisectionTest(g6, f, 15));
+    assert(bisectionTest(g7, f, 15));
+    assert(bisectionTest(g8, f, 15));
 
     //ONE-HELPFUL SET
     set<Number> v0;
@@ -174,7 +164,7 @@ int main(){
     assert(oneHelpfulSetTest(g1, v0));
     v0.insert(18);
     /*
-     * SPECIAL CASE...HERE IS THE CUT TOO SMALL, THAT WE DONT SEARCH FOR 1-HELPFUL SET
+     * SPECIAL CASE IN NEXT ROW...HERE IS THE CUT TOO SMALL, THAT WE DONT SEARCH FOR 1-HELPFUL SET
      */
     assert(!oneHelpfulSetTest(g2, v0));
     v0.insert(19);

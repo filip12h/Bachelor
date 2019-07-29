@@ -42,4 +42,5 @@ int main(){
         cin>>answer;
     }
     cout<<"THANKS FOR YOUR TIME, THEN YOU CAN THANK ME FOR MINE :)";
+
 }
