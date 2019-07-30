@@ -69,7 +69,7 @@ vector<set<Number>> treeDecomposition(Graph &graph, set<Number> treeVertices, Nu
 
 //function will reduce components, i.e. bags which are subsets of neighbor bags will be removed
 // we will get value of decomposition's width
-inline int reduceDecomposition(vector<set<Number>> &decomposition){
+inline int decompositionWidth(vector <set<Number>> &decomposition){
     int decSize = decomposition.size();
     unsigned int pathWidth = 0;
     for (int i = 0; i<decSize-1; i++) {
@@ -265,9 +265,9 @@ vector<set<Number>> pathDecomposition(Graph &graph, int epsilonExp){
     decomposition.insert(decomposition.end(), middleDecomposition.begin(), middleDecomposition.end());
     decomposition.insert(decomposition.end(), v1Decomposition.begin(), v1Decomposition.end());
 
-    int sizeOfDecomposition = reduceDecomposition(decomposition);
+    int widthOfDecomposition = decompositionWidth(decomposition);
 
-    cout<<"Size of the path decomposition is: "<<sizeOfDecomposition<<"\n\n";
+    cout<<"Width of the path decomposition is: "<<widthOfDecomposition<<"\n\n";
 
     return decomposition;
 }

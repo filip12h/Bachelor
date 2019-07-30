@@ -10,8 +10,8 @@ makes path decomposition, and test.cpp which tests .hpp files.
     https://bitbucket.org/relatko/ba-graph/commits/67a1f4e718bd4aaf5a389aa54097db227800f27f.
     If you have troubles with current version, try download version from
     05/07/2019.
-      - in Makefile set the path to a library
-          - CFLAGS - usually it is ../ba-graph/in-clude/
+      - make sure that path to library in Makefile is set correctly
+          - in first row: CFLAGS - usually it is ../ba-graph/in-clude/
 
   2. your compiler should be at least gcc-6 or higher
 
@@ -52,6 +52,7 @@ Project provides interfaces for path decomposition, cut of the
 ###FORMAT OF INPUT
 
   In first row of command line is one integer - number of vertices. It should be even because graph is cubic.
+  We recommend use as inputs graphs with at least 20 vertices. Smaller graphs may not work well because of rough bisection.
   In every next row there is pair of numbers - "u v" means that there is edge between u and v.
     
   After path decomposition, you can choose if you want to quit or continue.

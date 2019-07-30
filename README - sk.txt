@@ -10,8 +10,8 @@ cestovú dekompozíciu grafu, a test.cpp, ktorý súbory .hpp testuje.
     https://bitbucket.org/relatko/ba-graph/commits/67a1f4e718bd4aaf5a389aa54097db227800f27f.
     Pokiaľ nefunguje program správne s najnovšou verziou, skúste si stiahnuť
     verziu z 7.5.2019 ktorá je s týmto projektom kompatibilná.
-     - v Makefile nastavte cestu ku knižnici
-          - v CFLAGS - najčastejšie je to ../ba-graph/include/
+     - uistite sa že v Makefile je cesta ku knižnici nastavená správne
+          - v prvom riadku: CFLAGS - najčastejšie je to ../ba-graph/include/
 
   2. kompilátor by mal byť aspoň gcc-6 alebo vyšší
 
@@ -51,7 +51,8 @@ Projekt poskytuje rozhranie pre cestovú dekompozíciu grafu, avšak navyše aj
 ###FORMÁT VSTUPU V main.cpp
                       
   V prvom riadku je číslo určujúce počet vrcholov grafu - pre správne fungovanie musí byť toto číslo párne, inak
-  nepôjde o 3-regulárny graf.
+  nepôjde o 3-regulárny graf. Pre správne fungovanie programu odporúčame ako vstupné grafy s aspoň 20 vrcholmi.
+  Pri menších vstupoch program nemusí fungovať dobre kvôli približnej bisekcii.
   V každom ďalšom riadku bude dvojica čísel - vrcholov v tvare "u v" - hrana medzi vrcholmi u a v.
 
   Po skončení dekompozície užívateľ môže ukončiť program ("quit") alebo pokračovať (hocičo iné, napríklad "nie").

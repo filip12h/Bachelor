@@ -1,4 +1,4 @@
-CFLAGS = -std=c++17 -fconcepts -I../BAgraph/BAgraph/include/
+CFLAGS = -std=c++17 -fconcepts -I../ba-graph/include/
 DBGFLAGS = -g -O0 -pedantic -Wall -Wextra -DBA_GRAPH_DEBUG
 EXTRADBGFLAGS = -D_GLIBCXX_DEBUG
 COMPILE_DBG = $(CXX) $(CFLAGS) $(DBGFLAGS)
